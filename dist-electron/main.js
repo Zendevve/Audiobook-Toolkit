@@ -104,7 +104,7 @@ ipcMain.handle("audio:show-save-dialog", async () => {
   return result.filePath;
 });
 ipcMain.handle("audio:process", async (_event, options) => {
-  const { files, bitrate, outputFormat } = options;
+  const { files, bitrate, outputFormat, coverPath, bookMetadata } = options;
   if (!files || files.length === 0) {
     throw new Error("No files to process");
   }
@@ -161,6 +161,12 @@ ipcMain.handle("audio:process", async (_event, options) => {
     });
     const metadataInputIndex = files.length;
     command = command.input(metadataFilePath);
+    let coverInputIndex = -1;
+    if (coverPath && fs.existsSync(coverPath) && !isMP3) {
+      coverInputIndex = metadataInputIndex + 1;
+      command = command.input(coverPath);
+      console.log("[MERGE] Cover image added at input", coverInputIndex, ":", coverPath);
+    }
     const outputOptions = [
       "-filter_complex",
       filterComplex,
@@ -171,8 +177,21 @@ ipcMain.handle("audio:process", async (_event, options) => {
       "-b:a",
       bitrate || "128k"
     ];
+    if (coverInputIndex >= 0) {
+      outputOptions.push("-map", `${coverInputIndex}:v`);
+      outputOptions.push("-c:v", "mjpeg");
+      outputOptions.push("-disposition:v", "attached_pic");
+    }
     if (!isMP3) {
       outputOptions.push("-map_metadata", String(metadataInputIndex));
+      if (bookMetadata) {
+        if (bookMetadata.title) outputOptions.push("-metadata", `title=${bookMetadata.title}`);
+        if (bookMetadata.author) outputOptions.push("-metadata", `artist=${bookMetadata.author}`);
+        if (bookMetadata.author) outputOptions.push("-metadata", `album_artist=${bookMetadata.author}`);
+        if (bookMetadata.genre) outputOptions.push("-metadata", `genre=${bookMetadata.genre}`);
+        if (bookMetadata.year) outputOptions.push("-metadata", `date=${bookMetadata.year}`);
+        if (bookMetadata.narrator) outputOptions.push("-metadata", `composer=${bookMetadata.narrator}`);
+      }
     }
     command.outputOptions(outputOptions).output(outputPath).on("start", (cmd) => {
       console.log("[MERGE] FFmpeg command:", cmd);

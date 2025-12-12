@@ -42,6 +42,14 @@ declare global {
           files: { path: string; title: string; duration: number }[];
           outputFormat: 'm4b' | 'aac' | 'mp3';
           bitrate: string;
+          coverPath?: string;
+          bookMetadata?: {
+            title: string;
+            author: string;
+            genre: string;
+            year?: string;
+            narrator?: string;
+          };
         }) => Promise<{ success: boolean; outputPath?: string; cancelled?: boolean }>;
         onProgress: (callback: (progress: { percent: number; timemark: string }) => void) => void;
         removeProgressListener: () => void;

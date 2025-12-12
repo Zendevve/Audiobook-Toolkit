@@ -152,19 +152,30 @@ export default function Dashboard() {
 
     // Process metadata in background
     if (window.electron) {
+      let isFirstFile = true;
       for (const fileObj of newFiles) {
         try {
-          const metadata = await window.electron.audio.readMetadata(fileObj.path);
+          const audioMeta = await window.electron.audio.readMetadata(fileObj.path);
           setFiles(prev => prev.map(f => f.id === fileObj.id ? {
             ...f,
             metadata: {
               ...f.metadata,
-              title: metadata.title || f.metadata.title,
-              artist: metadata.artist || f.metadata.artist,
-              album: metadata.album || f.metadata.album,
-              duration: metadata.duration
+              title: audioMeta.title || f.metadata.title,
+              artist: audioMeta.artist || f.metadata.artist,
+              album: audioMeta.album || f.metadata.album,
+              duration: audioMeta.duration
             }
           } : f));
+
+          // Auto-populate book metadata from first file if empty
+          if (isFirstFile) {
+            setMetadata(prev => ({
+              ...prev,
+              title: prev.title || audioMeta.album || audioMeta.title || '',
+              author: prev.author || audioMeta.artist || '',
+            }));
+            isFirstFile = false;
+          }
         } catch (error) {
           console.error(`Failed to read metadata for ${fileObj.path}`, error);
         }
@@ -252,6 +263,14 @@ export default function Dashboard() {
         })),
         outputFormat,
         bitrate,
+        coverPath: metadata.coverPath,
+        bookMetadata: {
+          title: metadata.title,
+          author: metadata.author,
+          genre: metadata.genre,
+          year: metadata.year,
+          narrator: metadata.narrator,
+        },
       });
 
       if (result.success) {

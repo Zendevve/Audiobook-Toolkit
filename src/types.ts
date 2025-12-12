@@ -28,7 +28,9 @@ export interface ProcessingOptions {
 declare global {
   interface Window {
     electron: {
+      openFiles: () => Promise<string[]>;
       audio: {
+        getPathForFile: (file: File) => string;
         readMetadata: (path: string) => Promise<{
           path: string;
           duration: number;
@@ -36,6 +38,13 @@ declare global {
           artist: string;
           album: string;
         }>;
+        process: (options: {
+          files: { path: string; title: string; duration: number }[];
+          outputFormat: 'm4b' | 'aac' | 'mp3';
+          bitrate: string;
+        }) => Promise<{ success: boolean; outputPath?: string; cancelled?: boolean }>;
+        onProgress: (callback: (progress: { percent: number; timemark: string }) => void) => void;
+        removeProgressListener: () => void;
       };
     };
   }

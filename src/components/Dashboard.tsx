@@ -10,6 +10,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MetadataPanel, defaultMetadata } from '@/components/MetadataPanel';
+import type { BookMetadata } from '@/components/MetadataPanel';
 import type { AudioFile } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -104,6 +106,7 @@ function SortableItem({ file, index, onRemove, onUpdateMetadata }: SortableItemP
 
 export default function Dashboard() {
   const [files, setFiles] = useState<AudioFile[]>([]);
+  const [metadata, setMetadata] = useState<BookMetadata>(defaultMetadata);
   const [outputFormat, setOutputFormat] = useState<OutputFormat>('m4b');
   const [bitrate, setBitrate] = useState<Bitrate>('128k');
 
@@ -336,6 +339,14 @@ export default function Dashboard() {
             Browse Files
           </Button>
         </div>
+
+        {/* Book Metadata Panel - appears when files exist */}
+        {files.length > 0 && (
+          <MetadataPanel
+            metadata={metadata}
+            onChange={setMetadata}
+          />
+        )}
 
         {/* File List with Drag & Drop Reorder */}
         <div className="flex-1 overflow-y-auto space-y-2">

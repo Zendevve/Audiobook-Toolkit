@@ -156,7 +156,7 @@ ipcMain.handle("audio:process", async (_event, options) => {
     console.log("[MERGE] Filter complex:", filterComplex);
     console.log("[MERGE] Using codec:", codec, "bitrate:", bitrate || "128k");
     let command = ffmpeg();
-    files.forEach((file, _index) => {
+    files.forEach((file) => {
       command = command.input(file.path);
     });
     const metadataInputIndex = files.length;

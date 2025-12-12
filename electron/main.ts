@@ -208,7 +208,7 @@ ipcMain.handle('audio:process', async (_event, options: ProcessOptions) => {
     let command = ffmpeg();
 
     // Add each audio file as an input
-    files.forEach((file, _index) => {
+    files.forEach((file) => {
       command = command.input(file.path);
     });
 

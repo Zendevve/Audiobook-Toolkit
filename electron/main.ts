@@ -1,7 +1,12 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
+import fs from 'fs';
+import ffmpeg from 'fluent-ffmpeg';
+import ffmpegPath from 'ffmpeg-static';
+import ffprobePath from 'ffprobe-static';
+import os from 'os';
 
 const require = createRequire(import.meta.url);
 const __filename = fileURLToPath(import.meta.url);
@@ -58,12 +63,7 @@ app.on('activate', () => {
   }
 });
 
-import { dialog } from 'electron';
-import ffmpeg from 'fluent-ffmpeg';
-import ffmpegPath from 'ffmpeg-static';
-import ffprobePath from 'ffprobe-static';
-import fs from 'fs';
-import os from 'os';
+
 
 // Window control handlers
 ipcMain.on('window:minimize', () => mainWindow?.minimize());
@@ -452,4 +452,120 @@ ipcMain.handle('audio:process', async (_event, options: ProcessOptions) => {
     command.run();
   });
 });
+// ========================================
+// Format Conversion IPC Handlers
+// ========================================
 
+interface ConversionRequest {
+  inputPath: string;
+  outputFormat: 'm4b' | 'm4a' | 'mp3' | 'aac';
+  bitrate?: string;
+}
+
+interface ConversionResult {
+  success: boolean;
+  inputPath: string;
+  outputPath?: string;
+  error?: string;
+}
+
+// Helper function for conversion logic (DRY principle, MCAF compliant)
+async function convertAudioFile(
+  inputPath: string,
+  outputFormat: 'm4b' | 'm4a' | 'mp3' | 'aac',
+  bitrate: string = '128k',
+  progressCallback?: (percent: number, currentTime: string) => void
+): Promise<ConversionResult> {
+  try {
+    if (!fs.existsSync(inputPath)) {
+      throw new Error(`Input file not found: ${inputPath}`);
+    }
+
+    const parsedPath = path.parse(inputPath);
+    const outputPath = path.join(parsedPath.dir, `${parsedPath.name}.${outputFormat}`);
+
+    let codec: string;
+    let container: string;
+
+    switch (outputFormat) {
+      case 'm4b':
+        codec = 'aac';
+        container = 'ipod';
+        break;
+      case 'm4a':
+        codec = 'aac';
+        container = 'mp4';
+        break;
+      case 'mp3':
+        codec = 'libmp3lame';
+        container = 'mp3';
+        break;
+      case 'aac':
+        codec = 'aac';
+        container = 'adts';
+        break;
+      default:
+        throw new Error(`Unsupported format: ${outputFormat}`);
+    }
+
+    console.log(`[CONVERT] ${inputPath} -> ${outputPath} (${codec})`);
+
+    return new Promise((resolve, reject) => {
+      ffmpeg(inputPath)
+        .audioCodec(codec)
+        .audioBitrate(bitrate)
+        .format(container)
+        .outputOptions(['-map_metadata', '0'])
+        .on('start', (cmdLine: string) => {
+          console.log('[CONVERT] FFmpeg command:', cmdLine);
+        })
+        .on('progress', (progress: { percent?: number; timemark: string }) => {
+          if (progressCallback) {
+            progressCallback(progress.percent || 0, progress.timemark);
+          }
+        })
+        .on('end', () => {
+          console.log('[CONVERT] Conversion complete:', outputPath);
+          resolve({ success: true, inputPath, outputPath });
+        })
+        .on('error', (err: Error) => {
+          console.error('[CONVERT] FFmpeg error:', err.message);
+          reject({ success: false, inputPath, error: err.message });
+        })
+        .save(outputPath);
+    });
+  } catch (err) {
+    console.error('[CONVERT] Error:', err);
+    return {
+      success: false,
+      inputPath,
+      error: (err as Error).message,
+    };
+  }
+}
+
+ipcMain.handle('audio:convert', async (_event, request: ConversionRequest): Promise<ConversionResult> => {
+  const { inputPath, outputFormat, bitrate } = request;
+
+  return convertAudioFile(inputPath, outputFormat, bitrate, (percent, currentTime) => {
+    if (_event.sender && !_event.sender.isDestroyed()) {
+      _event.sender.send('audio:convertProgress', {
+        inputPath,
+        percent,
+        currentTime,
+      });
+    }
+  });
+});
+
+ipcMain.handle('audio:batchConvert', async (_event, requests: ConversionRequest[]): Promise<ConversionResult[]> => {
+  const results: ConversionResult[] = [];
+
+  // Process sequentially
+  for (const request of requests) {
+    const result = await convertAudioFile(request.inputPath, request.outputFormat, request.bitrate);
+    results.push(result);
+  }
+
+  return results;
+});

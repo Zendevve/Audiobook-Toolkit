@@ -1,24 +1,24 @@
-import { app as v, BrowserWindow as T, ipcMain as u, dialog as y } from "electron";
-import f from "path";
-import { fileURLToPath as G } from "url";
-import { createRequire as W } from "module";
-import S from "fluent-ffmpeg";
-import I from "ffmpeg-static";
-import N from "ffprobe-static";
-import n from "fs";
-import D from "os";
-const z = W(import.meta.url), J = G(import.meta.url), O = f.dirname(J);
+import { app as F, BrowserWindow as _, ipcMain as u, dialog as S } from "electron";
+import p from "path";
+import { fileURLToPath as N } from "url";
+import { createRequire as V } from "module";
+import l from "fs";
+import y from "fluent-ffmpeg";
+import W from "ffmpeg-static";
+import I from "ffprobe-static";
+import C from "os";
+const U = V(import.meta.url), z = N(import.meta.url), T = p.dirname(z);
 try {
-  z("electron-squirrel-startup") && v.quit();
+  U("electron-squirrel-startup") && F.quit();
 } catch {
 }
-let c = null;
-const C = () => {
-  c = new T({
+let f = null;
+const D = () => {
+  f = new _({
     width: 1200,
     height: 800,
     webPreferences: {
-      preload: f.join(O, "preload.mjs"),
+      preload: p.join(T, "preload.mjs"),
       nodeIntegration: !1,
       contextIsolation: !0,
       sandbox: !1,
@@ -26,51 +26,51 @@ const C = () => {
     },
     autoHideMenuBar: !0,
     backgroundColor: "#050506",
-    title: "Audiobook Binder",
+    title: "Audiobook Toolkit",
     frame: !1,
     // Frameless for custom titlebar
     minWidth: 900,
     minHeight: 600
-  }), process.env.VITE_DEV_SERVER_URL ? (c.loadURL(process.env.VITE_DEV_SERVER_URL), c.webContents.openDevTools()) : c.loadFile(f.join(O, "../dist/index.html"));
+  }), process.env.VITE_DEV_SERVER_URL ? (f.loadURL(process.env.VITE_DEV_SERVER_URL), f.webContents.openDevTools()) : f.loadFile(p.join(T, "../dist/index.html"));
 };
-v.on("ready", C);
-v.on("window-all-closed", () => {
-  process.platform !== "darwin" && v.quit();
+F.on("ready", D);
+F.on("window-all-closed", () => {
+  process.platform !== "darwin" && F.quit();
 });
-v.on("activate", () => {
-  T.getAllWindows().length === 0 && C();
+F.on("activate", () => {
+  _.getAllWindows().length === 0 && D();
 });
-u.on("window:minimize", () => c?.minimize());
+u.on("window:minimize", () => f?.minimize());
 u.on("window:maximize", () => {
-  c?.isMaximized() ? c.unmaximize() : c?.maximize();
+  f?.isMaximized() ? f.unmaximize() : f?.maximize();
 });
-u.on("window:close", () => c?.close());
-S.setFfmpegPath(I);
-S.setFfprobePath(N.path);
-u.handle("audio:read-metadata", async (m, t) => new Promise((o, i) => {
-  S.ffprobe(t, (d, s) => {
-    if (d) {
-      console.error("Error reading metadata:", d), i(d);
+u.on("window:close", () => f?.close());
+y.setFfmpegPath(W);
+y.setFfprobePath(I.path);
+u.handle("audio:read-metadata", async (a, t) => new Promise((o, r) => {
+  y.ffprobe(t, (n, s) => {
+    if (n) {
+      console.error("Error reading metadata:", n), r(n);
       return;
     }
-    const e = s.format, r = e.tags || {};
+    const e = s.format, i = e.tags || {};
     o({
       path: t,
       duration: e.duration || 0,
-      title: r.title || f.basename(t),
-      artist: r.artist || "Unknown Artist",
-      album: r.album || "Unknown Album"
+      title: i.title || p.basename(t),
+      artist: i.artist || "Unknown Artist",
+      album: i.album || "Unknown Album"
     });
   });
 }));
-u.handle("dialog:open-files", async () => (await y.showOpenDialog({
+u.handle("dialog:open-files", async () => (await S.showOpenDialog({
   title: "Select Audio Files",
   properties: ["openFile", "multiSelections"],
   filters: [
     { name: "Audio Files", extensions: ["mp3", "m4a", "m4b", "aac", "wav", "flac", "ogg"] }
   ]
 })).filePaths);
-u.handle("audio:show-save-dialog", async () => (await y.showSaveDialog({
+u.handle("audio:show-save-dialog", async () => (await S.showSaveDialog({
   title: "Save Audiobook",
   defaultPath: "audiobook.m4b",
   filters: [
@@ -79,8 +79,8 @@ u.handle("audio:show-save-dialog", async () => (await y.showSaveDialog({
     { name: "MP3 Audio", extensions: ["mp3"] }
   ]
 })).filePath);
-u.handle("project:save", async (m, t) => {
-  const o = await y.showSaveDialog({
+u.handle("project:save", async (a, t) => {
+  const o = await S.showSaveDialog({
     title: "Save Project",
     defaultPath: "audiobook-project.adbp",
     filters: [
@@ -91,33 +91,33 @@ u.handle("project:save", async (m, t) => {
   if (!o.filePath)
     return { success: !1, cancelled: !0 };
   try {
-    return n.writeFileSync(o.filePath, JSON.stringify(t, null, 2), "utf8"), console.log("[PROJECT] Saved to:", o.filePath), { success: !0, filePath: o.filePath };
-  } catch (i) {
-    return console.error("[PROJECT] Save error:", i), { success: !1, error: i.message };
+    return l.writeFileSync(o.filePath, JSON.stringify(t, null, 2), "utf8"), console.log("[PROJECT] Saved to:", o.filePath), { success: !0, filePath: o.filePath };
+  } catch (r) {
+    return console.error("[PROJECT] Save error:", r), { success: !1, error: r.message };
   }
 });
 u.handle("project:load", async () => {
-  const m = await y.showOpenDialog({
+  const a = await S.showOpenDialog({
     title: "Open Project",
     properties: ["openFile"],
     filters: [
       { name: "ADB Binder Project", extensions: ["adbp", "json"] }
     ]
   });
-  if (!m.filePaths || m.filePaths.length === 0)
+  if (!a.filePaths || a.filePaths.length === 0)
     return { success: !1, cancelled: !0 };
   try {
-    const t = m.filePaths[0], o = n.readFileSync(t, "utf8"), i = JSON.parse(o);
-    return console.log("[PROJECT] Loaded from:", t), { success: !0, data: i, filePath: t };
+    const t = a.filePaths[0], o = l.readFileSync(t, "utf8"), r = JSON.parse(o);
+    return console.log("[PROJECT] Loaded from:", t), { success: !0, data: r, filePath: t };
   } catch (t) {
     return console.error("[PROJECT] Load error:", t), { success: !1, error: t.message };
   }
 });
-u.handle("audio:detect-artwork", async (m, t) => {
+u.handle("audio:detect-artwork", async (a, t) => {
   if (!t || t.length === 0)
     return { found: !1 };
   console.log("[ARTWORK] Scanning for artwork from", t.length, "files");
-  const o = t[0], i = f.dirname(o), d = [
+  const o = t[0], r = p.dirname(o), n = [
     "cover.jpg",
     "cover.jpeg",
     "cover.png",
@@ -134,120 +134,179 @@ u.handle("audio:detect-artwork", async (m, t) => {
     "artwork.jpeg",
     "artwork.png"
   ];
-  for (const s of d) {
-    const e = f.join(i, s);
-    if (n.existsSync(e)) {
+  for (const s of n) {
+    const e = p.join(r, s);
+    if (l.existsSync(e)) {
       console.log("[ARTWORK] Found cover file:", e);
       try {
-        const w = n.readFileSync(e).toString("base64");
+        const h = l.readFileSync(e).toString("base64");
         return {
           found: !0,
           source: "folder",
-          data: `data:${f.extname(e).toLowerCase().slice(1) === "png" ? "image/png" : "image/jpeg"};base64,${w}`
+          data: `data:${p.extname(e).toLowerCase().slice(1) === "png" ? "image/png" : "image/jpeg"};base64,${h}`
         };
-      } catch (r) {
-        console.error("[ARTWORK] Error reading cover file:", r);
+      } catch (i) {
+        console.error("[ARTWORK] Error reading cover file:", i);
       }
     }
   }
   for (const s of t)
     try {
-      const e = f.join(D.tmpdir(), `cover_${Date.now()}.jpg`);
-      if (await new Promise((r, w) => {
-        S(s).outputOptions(["-an", "-vcodec", "copy"]).output(e).on("end", () => r()).on("error", (p) => {
-          r();
+      const e = p.join(C.tmpdir(), `cover_${Date.now()}.jpg`);
+      if (await new Promise((i, h) => {
+        y(s).outputOptions(["-an", "-vcodec", "copy"]).output(e).on("end", () => i()).on("error", (m) => {
+          i();
         }).run();
-      }), n.existsSync(e)) {
-        if (n.statSync(e).size > 0) {
+      }), l.existsSync(e)) {
+        if (l.statSync(e).size > 0) {
           console.log("[ARTWORK] Extracted embedded artwork from:", s);
-          const p = n.readFileSync(e).toString("base64");
-          return n.unlinkSync(e), {
+          const m = l.readFileSync(e).toString("base64");
+          return l.unlinkSync(e), {
             found: !0,
             source: "embedded",
-            data: `data:image/jpeg;base64,${p}`
+            data: `data:image/jpeg;base64,${m}`
           };
         }
-        n.unlinkSync(e);
+        l.unlinkSync(e);
       }
     } catch {
     }
   return console.log("[ARTWORK] No artwork found"), { found: !1 };
 });
-u.handle("audio:process", async (m, t) => {
-  const { files: o, bitrate: i, outputFormat: d, coverPath: s, bookMetadata: e } = t;
+u.handle("audio:process", async (a, t) => {
+  const { files: o, bitrate: r, outputFormat: n, coverPath: s, bookMetadata: e } = t;
   if (!o || o.length === 0)
     throw new Error("No files to process");
-  console.log("[MERGE] Starting merge with", o.length, "files"), o.forEach((g, R) => console.log(`[MERGE] File ${R}:`, g.path, "duration:", g.duration));
-  const r = d === "mp3" ? "mp3" : d === "aac" ? "m4a" : "m4b", w = await y.showSaveDialog({
+  console.log("[MERGE] Starting merge with", o.length, "files"), o.forEach((E, P) => console.log(`[MERGE] File ${P}:`, E.path, "duration:", E.duration));
+  const i = n === "mp3" ? "mp3" : n === "aac" ? "m4a" : "m4b", h = await S.showSaveDialog({
     title: "Save Audiobook",
-    defaultPath: `audiobook.${r}`,
+    defaultPath: `audiobook.${i}`,
     filters: [
       { name: "M4B Audiobook", extensions: ["m4b"] },
       { name: "MP3 Audio", extensions: ["mp3"] },
       { name: "AAC Audio", extensions: ["m4a"] }
     ]
   });
-  if (!w.filePath)
+  if (!h.filePath)
     return { success: !1, cancelled: !0 };
-  const p = w.filePath;
-  console.log("[MERGE] Output path:", p);
-  const M = D.tmpdir(), P = f.join(M, `metadata_${Date.now()}.txt`);
-  let E = `;FFMETADATA1
+  const m = h.filePath;
+  console.log("[MERGE] Output path:", m);
+  const g = C.tmpdir(), v = p.join(g, `metadata_${Date.now()}.txt`);
+  let b = `;FFMETADATA1
 `, A = 0;
-  const j = d === "mp3" || p.endsWith(".mp3");
-  return j || o.forEach((g, R) => {
-    const x = Math.floor(A * 1e3), k = Math.floor((A + g.duration) * 1e3);
-    E += `[CHAPTER]
-`, E += `TIMEBASE=1/1000
-`, E += `START=${x}
-`, E += `END=${k}
-`, E += `title=${g.title || `Chapter ${R + 1}`}
-`, A += g.duration;
-  }), n.writeFileSync(P, E, "utf8"), console.log("[MERGE] Metadata written to:", P), new Promise((g, R) => {
-    const x = j ? "libmp3lame" : "aac", _ = `${o.map((a, b) => `[${b}:a]`).join("")}concat=n=${o.length}:v=0:a=1[outa]`;
-    console.log("[MERGE] Filter complex:", _), console.log("[MERGE] Using codec:", x, "bitrate:", i || "128k");
-    let h = S();
-    o.forEach((a) => {
-      h = h.input(a.path);
+  const j = n === "mp3" || m.endsWith(".mp3");
+  return j || o.forEach((E, P) => {
+    const k = Math.floor(A * 1e3), $ = Math.floor((A + E.duration) * 1e3);
+    b += `[CHAPTER]
+`, b += `TIMEBASE=1/1000
+`, b += `START=${k}
+`, b += `END=${$}
+`, b += `title=${E.title || `Chapter ${P + 1}`}
+`, A += E.duration;
+  }), l.writeFileSync(v, b, "utf8"), console.log("[MERGE] Metadata written to:", v), new Promise((E, P) => {
+    const k = j ? "libmp3lame" : "aac", M = `${o.map((c, R) => `[${R}:a]`).join("")}concat=n=${o.length}:v=0:a=1[outa]`;
+    console.log("[MERGE] Filter complex:", M), console.log("[MERGE] Using codec:", k, "bitrate:", r || "128k");
+    let w = y();
+    o.forEach((c) => {
+      w = w.input(c.path);
     });
-    const $ = o.length;
-    h = h.input(P);
-    let F = -1;
-    s && n.existsSync(s) && !j && (F = $ + 1, h = h.input(s), console.log("[MERGE] Cover image added at input", F, ":", s));
-    const l = [
+    const O = o.length;
+    w = w.input(v);
+    let x = -1;
+    s && l.existsSync(s) && !j && (x = O + 1, w = w.input(s), console.log("[MERGE] Cover image added at input", x, ":", s));
+    const d = [
       "-filter_complex",
-      _,
+      M,
       "-map",
       "[outa]",
       "-c:a",
-      x,
+      k,
       "-b:a",
-      i || "128k"
+      r || "128k"
     ];
-    F >= 0 && (l.push("-map", `${F}:v`), l.push("-c:v", "mjpeg"), l.push("-disposition:v", "attached_pic")), j || (l.push("-map_metadata", String($)), e && (e.title && l.push("-metadata", `title=${e.title}`), e.author && l.push("-metadata", `artist=${e.author}`), e.author && l.push("-metadata", `album_artist=${e.author}`), e.genre && l.push("-metadata", `genre=${e.genre}`), e.year && l.push("-metadata", `date=${e.year}`), e.narrator && l.push("-metadata", `composer=${e.narrator}`))), h.outputOptions(l).output(p).on("start", (a) => {
-      console.log("[MERGE] FFmpeg command:", a);
-    }).on("stderr", (a) => {
-      (a.includes("Error") || a.includes("error") || a.includes("Opening") || a.includes("Output")) && console.log("[MERGE] FFmpeg:", a);
-    }).on("progress", (a) => {
-      const b = a.percent || 0;
-      b > 0 && console.log("[MERGE] Progress:", b.toFixed(1) + "%"), c && c.webContents.send("audio:progress", {
-        percent: b,
-        timemark: a.timemark
+    x >= 0 && (d.push("-map", `${x}:v`), d.push("-c:v", "mjpeg"), d.push("-disposition:v", "attached_pic")), j || (d.push("-map_metadata", String(O)), e && (e.title && d.push("-metadata", `title=${e.title}`), e.author && d.push("-metadata", `artist=${e.author}`), e.author && d.push("-metadata", `album_artist=${e.author}`), e.genre && d.push("-metadata", `genre=${e.genre}`), e.year && d.push("-metadata", `date=${e.year}`), e.narrator && d.push("-metadata", `composer=${e.narrator}`))), w.outputOptions(d).output(m).on("start", (c) => {
+      console.log("[MERGE] FFmpeg command:", c);
+    }).on("stderr", (c) => {
+      (c.includes("Error") || c.includes("error") || c.includes("Opening") || c.includes("Output")) && console.log("[MERGE] FFmpeg:", c);
+    }).on("progress", (c) => {
+      const R = c.percent || 0;
+      R > 0 && console.log("[MERGE] Progress:", R.toFixed(1) + "%"), f && f.webContents.send("audio:progress", {
+        percent: R,
+        timemark: c.timemark
       });
     }).on("end", () => {
-      console.log("[MERGE] FFmpeg completed successfully!"), console.log("[MERGE] Output file:", p);
+      console.log("[MERGE] FFmpeg completed successfully!"), console.log("[MERGE] Output file:", m);
       try {
-        n.unlinkSync(P);
+        l.unlinkSync(v);
       } catch {
       }
-      g({ success: !0, outputPath: p });
-    }).on("error", (a, b, B) => {
-      console.error("[MERGE] FFmpeg error:", a.message), console.error("[MERGE] FFmpeg stderr:", B);
+      E({ success: !0, outputPath: m });
+    }).on("error", (c, R, G) => {
+      console.error("[MERGE] FFmpeg error:", c.message), console.error("[MERGE] FFmpeg stderr:", G);
       try {
-        n.unlinkSync(P);
+        l.unlinkSync(v);
       } catch {
       }
-      R(a);
-    }), h.run();
+      P(c);
+    }), w.run();
   });
+});
+async function B(a, t, o = "128k", r) {
+  try {
+    if (!l.existsSync(a))
+      throw new Error(`Input file not found: ${a}`);
+    const n = p.parse(a), s = p.join(n.dir, `${n.name}.${t}`);
+    let e, i;
+    switch (t) {
+      case "m4b":
+        e = "aac", i = "ipod";
+        break;
+      case "m4a":
+        e = "aac", i = "mp4";
+        break;
+      case "mp3":
+        e = "libmp3lame", i = "mp3";
+        break;
+      case "aac":
+        e = "aac", i = "adts";
+        break;
+      default:
+        throw new Error(`Unsupported format: ${t}`);
+    }
+    return console.log(`[CONVERT] ${a} -> ${s} (${e})`), new Promise((h, m) => {
+      y(a).audioCodec(e).audioBitrate(o).format(i).outputOptions(["-map_metadata", "0"]).on("start", (g) => {
+        console.log("[CONVERT] FFmpeg command:", g);
+      }).on("progress", (g) => {
+        r && r(g.percent || 0, g.timemark);
+      }).on("end", () => {
+        console.log("[CONVERT] Conversion complete:", s), h({ success: !0, inputPath: a, outputPath: s });
+      }).on("error", (g) => {
+        console.error("[CONVERT] FFmpeg error:", g.message), m({ success: !1, inputPath: a, error: g.message });
+      }).save(s);
+    });
+  } catch (n) {
+    return console.error("[CONVERT] Error:", n), {
+      success: !1,
+      inputPath: a,
+      error: n.message
+    };
+  }
+}
+u.handle("audio:convert", async (a, t) => {
+  const { inputPath: o, outputFormat: r, bitrate: n } = t;
+  return B(o, r, n, (s, e) => {
+    a.sender && !a.sender.isDestroyed() && a.sender.send("audio:convertProgress", {
+      inputPath: o,
+      percent: s,
+      currentTime: e
+    });
+  });
+});
+u.handle("audio:batchConvert", async (a, t) => {
+  const o = [];
+  for (const r of t) {
+    const n = await B(r.inputPath, r.outputFormat, r.bitrate);
+    o.push(n);
+  }
+  return o;
 });

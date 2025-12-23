@@ -21,11 +21,13 @@ Merge, convert, and enhance audiobooks - all in one beautiful desktop app.
 ## ✨ Features
 
 📚 **Audiobook Binder** - Merge multiple audio files into a single audiobook with chapter markers
-🔄 **Format Converter** - Convert between M4B, MP3, M4A, AAC, and FLAC *(coming soon)*
+🔄 **Format Converter** - Convert between M4B, MP3, M4A, AAC, and FLAC _(NEW in v0.2.0)_
 📝 **Rich Metadata Editor** - Edit title, author, narrator, series, cover art, and more
 🪄 **Smart Features** - Auto-fill metadata from online sources, smart artwork detection
 🎨 **Modern UI** - Beautiful dark-mode interface with premium aesthetics
 🔓 **100% Open Source** - Every feature available in the source code (Open Core model)
+
+![Format Converter Demo](docs/images/converter-demo.png)
 
 ---
 

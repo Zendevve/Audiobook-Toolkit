@@ -164,15 +164,16 @@ describe('Format Converter - Integration Tests', () => {
       const inputPath = path.join(TEST_FIXTURES_DIR, 'test-audio.wav');
 
       const conversions = [
-        { output: 'batch-1.m4b', format: 'ipod' },
-        { output: 'batch-2.mp3', format: 'mp3' },
-        { output: 'batch-3.m4a', format: 'mp4' },
+        { output: 'batch-1.m4b', codec: 'aac', format: 'ipod' },
+        { output: 'batch-2.mp3', codec: 'libmp3lame', format: null },
+        { output: 'batch-3.m4a', codec: 'aac', format: 'mp4' },
       ];
 
       for (const conv of conversions) {
         const outputPath = path.join(TEST_OUTPUT_DIR, conv.output);
+        const formatArg = conv.format ? `-f ${conv.format}` : '';
         await execAsync(
-          `ffmpeg -i "${inputPath}" -c:a aac -b:a 128k -f ${conv.format} -map_metadata 0 "${outputPath}"`
+          `ffmpeg -y -i "${inputPath}" -c:a ${conv.codec} -b:a 128k ${formatArg} "${outputPath}"`
         );
       }
 

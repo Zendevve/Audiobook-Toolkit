@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Audiobook Toolkit](docs/images/logo.png)
+<img src="docs/images/logo.png" width="200" alt="Audiobook Toolkit" />
 
 **Your complete audiobook workflow solution.**
 Merge, convert, and enhance audiobooks - all in one beautiful desktop app.

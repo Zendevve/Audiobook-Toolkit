@@ -25,10 +25,62 @@ export interface ProcessingOptions {
   useChapters: boolean;
 }
 
+export interface BookMetadata {
+  title: string;
+  subtitle?: string;
+  author: string;
+  genre: string;
+  year?: string;
+  narrator?: string;
+  series?: string;
+  seriesNumber?: number;
+  publisher?: string;
+  description?: string;
+  tags?: string[];
+  language?: string;
+  isbn?: string;
+  asin?: string;
+  explicit?: boolean;
+  coverPath?: string;
+  coverData?: string; // base64 data URL for preview
+}
+
+export interface ConversionFile {
+  id: string;
+  name: string;
+  path: string;
+  size: number;
+  status: 'pending' | 'converting' | 'done' | 'error';
+  progress: number;
+  outputPath?: string;
+  error?: string;
+}
+
+
+export interface UserSettings {
+  defaultOutputDirectory?: string;
+  defaultOutputFormat?: 'm4b' | 'mp3' | 'aac';
+  defaultBitrate?: string;
+  theme?: 'dark' | 'light' | 'system';
+}
+
+export interface RecentProject {
+  path: string;
+  name: string;
+  lastOpened: number;
+}
+
 declare global {
   interface Window {
     electron: {
+      minimize: () => void;
+      maximize: () => void;
+      close: () => void;
       openFiles: () => Promise<string[]>;
+      project: {
+        save: (data: any) => Promise<{ success: boolean; filePath?: string; error?: string }>;
+        load: (filePath?: string) => Promise<{ success: boolean; data?: any; error?: string; filePath?: string }>;
+      };
       audio: {
         getPathForFile: (file: File) => string;
         readMetadata: (path: string) => Promise<{
@@ -50,9 +102,27 @@ declare global {
             year?: string;
             narrator?: string;
           };
+          defaultOutputDirectory?: string;
         }) => Promise<{ success: boolean; outputPath?: string; cancelled?: boolean }>;
+        convert: (options: {
+          inputPath: string;
+          outputFormat: string;
+          bitrate: string;
+        }) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
+        detectArtwork: (filePaths: string[]) => Promise<{ found: boolean; source?: string; data?: string }>;
         onProgress: (callback: (progress: { percent: number; timemark: string }) => void) => void;
+        onConvertProgress: (callback: (data: { inputPath: string; percent: number }) => void) => void;
         removeProgressListener: () => void;
+      };
+      settings: {
+        read: () => Promise<UserSettings>;
+        write: (settings: UserSettings) => Promise<{ success: boolean; error?: string }>;
+        selectDirectory: () => Promise<string | null>;
+      };
+      recent: {
+        read: () => Promise<RecentProject[]>;
+        add: (path: string) => Promise<RecentProject[]>;
+        clear: () => Promise<RecentProject[]>;
       };
     };
   }

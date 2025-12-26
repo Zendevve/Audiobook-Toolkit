@@ -5,7 +5,7 @@ import { Upload, FileMusic, ArrowRight, X, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StepIndicator } from '@/components/wizard/StepIndicator';
 import type { AudioFile } from '@/types';
-import { cn } from '@/lib/utils';
+import { cn, formatDuration } from '@/lib/utils';
 
 interface UploadStepProps {
   files: AudioFile[];
@@ -44,16 +44,7 @@ export function UploadStep({ files, onFilesAdded, onRemoveFile, onNext, currentS
 
   const hasFiles = files.length > 0;
 
-  const formatDuration = (seconds: number) => {
-    if (!seconds) return '--:--';
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-    if (hours > 0) {
-      return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+
 
   return (
     <motion.div

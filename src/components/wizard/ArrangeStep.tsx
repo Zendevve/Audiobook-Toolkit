@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GripVertical, FileMusic, X, Clock, ArrowRight, ArrowLeft } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { StepIndicator } from '@/components/wizard/StepIndicator';
 import { AudioPreview } from '@/components/AudioPreview';
 import type { AudioFile } from '@/types';
-import { cn } from '@/lib/utils';
+import { cn, formatDuration } from '@/lib/utils';
 
 interface ArrangeStepProps {
   files: AudioFile[];
@@ -22,16 +22,7 @@ interface ArrangeStepProps {
   currentStep: number;
 }
 
-const formatDuration = (seconds: number) => {
-  if (!seconds) return '--:--';
-  const hours = Math.floor(seconds / 3600);
-  const mins = Math.floor((seconds % 3600) / 60);
-  const secs = Math.floor(seconds % 60);
-  if (hours > 0) {
-    return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  }
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
-};
+
 
 // Sortable Track Item
 function TrackItem({
@@ -58,6 +49,13 @@ function TrackItem({
     transform: CSS.Transform.toString(transform),
     transition,
   };
+
+  const [localTitle, setLocalTitle] = useState(file.metadata.title);
+
+  // Sync with parent state if it changes externally
+  useEffect(() => {
+    setLocalTitle(file.metadata.title);
+  }, [file.metadata.title]);
 
   return (
     <motion.div
@@ -98,8 +96,13 @@ function TrackItem({
       {/* Title Input */}
       <div className="flex-1">
         <Input
-          value={file.metadata.title}
-          onChange={(e) => onUpdateTitle(e.target.value)}
+          value={localTitle}
+          onChange={(e) => setLocalTitle(e.target.value)}
+          onBlur={() => {
+            if (localTitle !== file.metadata.title) {
+              onUpdateTitle(localTitle);
+            }
+          }}
           className="h-9 bg-transparent border-transparent text-[#EDEDEF] hover:bg-white/[0.03] focus:bg-[#0F0F12] focus:border-[#5E6AD2] rounded-lg transition-all"
           placeholder="Track title..."
         />
@@ -186,12 +189,7 @@ export function ArrangeStep({ files, onFilesChange, onRemoveFile, onUpdateMetada
   const activeIndex = activeId ? files.findIndex(f => f.id === activeId) : -1;
 
   const totalDuration = files.reduce((acc, f) => acc + (f.metadata.duration || 0), 0);
-  const formatTotalDuration = () => {
-    const hours = Math.floor(totalDuration / 3600);
-    const mins = Math.floor((totalDuration % 3600) / 60);
-    if (hours > 0) return `${hours}h ${mins}m`;
-    return `${mins} min`;
-  };
+
 
   return (
     <motion.div
@@ -220,7 +218,7 @@ export function ArrangeStep({ files, onFilesChange, onRemoveFile, onUpdateMetada
         </div>
         <div className="flex items-center gap-2 text-sm">
           <Clock className="w-4 h-4 text-[#5E6AD2]" />
-          <span className="text-[#EDEDEF]">{formatTotalDuration()} total</span>
+          <span className="text-[#EDEDEF]">{formatDuration(totalDuration, 'human')} total</span>
         </div>
       </div>
 

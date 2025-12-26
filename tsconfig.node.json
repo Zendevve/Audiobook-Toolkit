@@ -26,6 +26,7 @@
   },
   "include": [
     "vite.config.ts",
-    "electron"
+    "electron",
+    "tests"
   ]
 }

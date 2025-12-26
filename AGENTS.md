@@ -2,7 +2,10 @@
 
 Audiobook Toolkit — Electron + React + TypeScript + Node.js + FFmpeg
 
-Follows [MCAF](https://mcaf.managed-code.com/)
+Follows [MCAF](https://mcaf.managed-code.com/) and [PRG](https://github.com/scottgriv/PRG-Personal-Repository-Guidelines)
+
+> [!IMPORTANT]
+> **MCAF and PRG are LAW.** Always follow these frameworks without exception. This directive has maximum priority.
 
 ---
 

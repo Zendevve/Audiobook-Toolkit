@@ -1,8 +1,8 @@
 # Format Converter
 
-**Status**: Planned
-**Owner**: Product
-**Related ADRs**: TBD
+**Status**: ✅ Implemented (v0.2.0)
+**Owner**: Zendevve
+**Related ADRs**: [ADR-002](../ADR/ADR-002-ffmpeg-processing-strategy.md)
 
 ---
 

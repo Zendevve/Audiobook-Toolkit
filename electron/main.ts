@@ -22,6 +22,12 @@ try {
 let mainWindow: BrowserWindow | null = null;
 
 const createWindow = () => {
+  // Only disable webSecurity in development for live reload
+  const isDev = !!process.env.VITE_DEV_SERVER_URL;
+  if (isDev) {
+    process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
+  }
+
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -30,7 +36,7 @@ const createWindow = () => {
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: false,
-      webSecurity: false,
+      webSecurity: !isDev, // Enable in production, disable in dev for CORS
     },
     autoHideMenuBar: true,
     backgroundColor: '#050506',
@@ -98,6 +104,7 @@ interface ProcessOptions {
     year?: string;
     narrator?: string;
   };
+  defaultOutputDirectory?: string;
 }
 
 // IPC Handlers
@@ -156,7 +163,7 @@ ipcMain.handle('project:save', async (_event, projectData: object) => {
     title: 'Save Project',
     defaultPath: 'audiobook-project.adbp',
     filters: [
-      { name: 'ADB Binder Project', extensions: ['adbp'] },
+      { name: 'Audiobook Toolkit Project', extensions: ['adbp'] },
       { name: 'JSON Files', extensions: ['json'] },
     ],
   });
@@ -176,25 +183,29 @@ ipcMain.handle('project:save', async (_event, projectData: object) => {
 });
 
 // Load Project - Import project state from JSON file
-ipcMain.handle('project:load', async () => {
-  const result = await dialog.showOpenDialog({
-    title: 'Open Project',
-    properties: ['openFile'],
-    filters: [
-      { name: 'ADB Binder Project', extensions: ['adbp', 'json'] },
-    ],
-  });
+ipcMain.handle('project:load', async (_event, filePath?: string) => {
+  let targetPath = filePath;
 
-  if (!result.filePaths || result.filePaths.length === 0) {
-    return { success: false, cancelled: true };
+  if (!targetPath) {
+    const result = await dialog.showOpenDialog({
+      title: 'Open Project',
+      properties: ['openFile'],
+      filters: [
+        { name: 'Audiobook Toolkit Project', extensions: ['adbp', 'json'] },
+      ],
+    });
+
+    if (!result.filePaths || result.filePaths.length === 0) {
+      return { success: false, cancelled: true };
+    }
+    targetPath = result.filePaths[0];
   }
 
   try {
-    const filePath = result.filePaths[0];
-    const content = fs.readFileSync(filePath, 'utf8');
+    const content = fs.readFileSync(targetPath, 'utf8');
     const projectData = JSON.parse(content);
-    console.log('[PROJECT] Loaded from:', filePath);
-    return { success: true, data: projectData, filePath };
+    console.log('[PROJECT] Loaded from:', targetPath);
+    return { success: true, data: projectData, filePath: targetPath };
   } catch (err) {
     console.error('[PROJECT] Load error:', err);
     return { success: false, error: (err as Error).message };
@@ -286,7 +297,7 @@ ipcMain.handle('audio:detect-artwork', async (_event, filePaths: string[]) => {
 
 // Process and merge audio files using filter_complex
 ipcMain.handle('audio:process', async (_event, options: ProcessOptions) => {
-  const { files, bitrate, outputFormat, coverPath, bookMetadata } = options;
+  const { files, bitrate, outputFormat, coverPath, bookMetadata, defaultOutputDirectory } = options;
 
   if (!files || files.length === 0) {
     throw new Error('No files to process');
@@ -297,9 +308,14 @@ ipcMain.handle('audio:process', async (_event, options: ProcessOptions) => {
 
   // Show save dialog
   const defaultExt = outputFormat === 'mp3' ? 'mp3' : outputFormat === 'aac' ? 'm4a' : 'm4b';
+  let defaultPath = `audiobook.${defaultExt}`;
+  if (defaultOutputDirectory) {
+    defaultPath = path.join(defaultOutputDirectory, defaultPath);
+  }
+
   const result = await dialog.showSaveDialog({
     title: 'Save Audiobook',
-    defaultPath: `audiobook.${defaultExt}`,
+    defaultPath,
     filters: [
       { name: 'M4B Audiobook', extensions: ['m4b'] },
       { name: 'MP3 Audio', extensions: ['mp3'] },
@@ -453,6 +469,99 @@ ipcMain.handle('audio:process', async (_event, options: ProcessOptions) => {
   });
 });
 // ========================================
+// Settings/Preferences Handlers
+// ========================================
+
+const SETTINGS_FILE = path.join(app.getPath('userData'), 'settings.json');
+
+ipcMain.handle('settings:read', async () => {
+  try {
+    if (fs.existsSync(SETTINGS_FILE)) {
+      const data = fs.readFileSync(SETTINGS_FILE, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (err) {
+    console.error('[SETTINGS] Failed to read settings:', err);
+  }
+  return {}; // Return empty object if no settings or error
+});
+
+ipcMain.handle('settings:write', async (_event, settings: object) => {
+  try {
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2), 'utf8');
+    return { success: true };
+  } catch (err) {
+    console.error('[SETTINGS] Failed to write settings:', err);
+    return { success: false, error: (err as Error).message };
+  }
+});
+
+ipcMain.handle('settings:select-directory', async () => {
+  const result = await dialog.showOpenDialog({
+    title: 'Select Default Output Directory',
+    properties: ['openDirectory', 'createDirectory'],
+  });
+
+  if (!result.canceled && result.filePaths.length > 0) {
+    return result.filePaths[0];
+  }
+  return null;
+});
+
+// ========================================
+// Recent Projects Handlers
+// ========================================
+
+const RECENT_PROJECTS_FILE = path.join(app.getPath('userData'), 'recent_projects.json');
+
+const getRecentProjects = (): { path: string; name: string; lastOpened: number }[] => {
+  try {
+    if (fs.existsSync(RECENT_PROJECTS_FILE)) {
+      return JSON.parse(fs.readFileSync(RECENT_PROJECTS_FILE, 'utf8'));
+    }
+  } catch (err) {
+    console.error('[RECENT] Failed to read recent projects:', err);
+  }
+  return [];
+};
+
+ipcMain.handle('recent:read', async () => {
+  return getRecentProjects();
+});
+
+ipcMain.handle('recent:add', async (_event, filePath: string) => {
+  try {
+    const projects = getRecentProjects();
+    const name = path.basename(filePath, path.extname(filePath));
+
+    // Remove existing entry for this path
+    const filtered = projects.filter(p => p.path !== filePath);
+
+    // Add to top
+    filtered.unshift({ path: filePath, name, lastOpened: Date.now() });
+
+    // Limit to 10
+    const limited = filtered.slice(0, 10);
+
+    fs.writeFileSync(RECENT_PROJECTS_FILE, JSON.stringify(limited, null, 2));
+    return limited;
+  } catch (err) {
+    console.error('[RECENT] Failed to add recent project:', err);
+    return [];
+  }
+});
+
+ipcMain.handle('recent:clear', async () => {
+  try {
+    fs.writeFileSync(RECENT_PROJECTS_FILE, '[]');
+    return [];
+  } catch (err) {
+    console.error('[RECENT] Failed to clear recent projects:', err);
+    return [];
+  }
+});
+
+// ========================================
 // Format Conversion IPC Handlers
 // ========================================
 
@@ -482,7 +591,19 @@ async function convertAudioFile(
     }
 
     const parsedPath = path.parse(inputPath);
-    const outputPath = path.join(parsedPath.dir, `${parsedPath.name}.${outputFormat}`);
+    let outputPath = path.join(parsedPath.dir, `${parsedPath.name}.${outputFormat}`);
+
+    // Critical: Prevent self-overwrite
+    if (inputPath === outputPath) {
+      outputPath = path.join(parsedPath.dir, `${parsedPath.name}_converted.${outputFormat}`);
+    }
+
+    // Security: Validate bitrate
+    const validBitrates = ['64k', '96k', '128k', '192k', '256k', '320k'];
+    if (!validBitrates.includes(bitrate)) {
+      console.warn(`[CONVERT] Invalid bitrate '${bitrate}', defaulting to 128k`);
+      bitrate = '128k';
+    }
 
     let codec: string;
     let container: string;

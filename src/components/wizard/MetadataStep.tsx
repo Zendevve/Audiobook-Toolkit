@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import {
   Image as ImageIcon,
   X,
@@ -20,7 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { StepIndicator } from '@/components/wizard/StepIndicator';
-import type { BookMetadata } from '@/components/MetadataPanel';
+import type { BookMetadata } from '@/types';
 import { cn } from '@/lib/utils';
 import { autoFillBookMetadata } from '@/lib/open-library';
 import type { AudioFile } from '@/types';
@@ -48,13 +49,21 @@ export function MetadataStep({ files, metadata, onChange, onNext, onBack, curren
 
     setArtworkLoading(true);
     try {
-      // @ts-expect-error Electron IPC
+
       const result = await window.electron.audio.detectArtwork(filePaths);
       if (result.found && result.data) {
         onChange({ ...metadata, coverData: result.data });
+        toast.success('Artwork found!', {
+          description: `Source: ${result.source === 'folder' ? 'Folder image' : 'Embedded in audio'}`,
+        });
+      } else {
+        toast.info('No artwork found', {
+          description: 'Try adding a cover image manually.',
+        });
       }
     } catch (error) {
       console.error('Artwork detection failed:', error);
+      toast.error('Artwork detection failed');
     } finally {
       setArtworkLoading(false);
     }
@@ -105,9 +114,19 @@ export function MetadataStep({ files, metadata, onChange, onNext, onBack, curren
         if (result.description) {
           setShowDescription(true);
         }
+        toast.success('Metadata filled from Open Library', {
+          description: `Found: "${result.title}" by ${result.author}`,
+        });
+      } else {
+        toast.info('No results found', {
+          description: 'Try a different search term.',
+        });
       }
     } catch (error) {
       console.error('Auto-fill failed:', error);
+      toast.error('Auto-fill failed', {
+        description: 'Could not connect to Open Library.',
+      });
     } finally {
       setAutoFillLoading(false);
     }

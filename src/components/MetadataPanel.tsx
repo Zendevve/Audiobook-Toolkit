@@ -6,25 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Image, RefreshCw, X } from 'lucide-react';
 
-export interface BookMetadata {
-  title: string;
-  subtitle?: string;
-  author: string;
-  genre: string;
-  year?: string;
-  narrator?: string;
-  series?: string;
-  seriesNumber?: number;
-  publisher?: string;
-  description?: string;
-  tags?: string[];
-  language?: string;
-  isbn?: string;
-  asin?: string;
-  explicit?: boolean;
-  coverPath?: string;
-  coverData?: string; // base64 data URL for preview
-}
+import type { BookMetadata } from '@/types';
 
 interface MetadataPanelProps {
   metadata: BookMetadata;

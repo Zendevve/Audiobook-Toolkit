@@ -1,22 +1,15 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import { Upload, FileAudio, X, Check, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { AUDIO_FORMATS, CONVERSION_PRESETS } from '@/lib/conversion-presets';
+import { AUDIO_FORMATS } from '@/lib/conversion-presets';
 import type { AudioFormat } from '@/lib/conversion-presets';
+import type { ConversionFile } from '@/types';
 
-interface ConversionFile {
-  id: string;
-  name: string;
-  path: string;
-  size: number;
-  status: 'pending' | 'converting' | 'done' | 'error';
-  progress: number;
-  outputPath?: string;
-  error?: string;
-}
+
 
 export function Converter() {
   const [files, setFiles] = useState<ConversionFile[]>([]);
@@ -31,7 +24,7 @@ export function Converter() {
     const newFiles: ConversionFile[] = Array.from(selectedFiles).map((file: any) => ({
       id: crypto.randomUUID(),
       name: file.name,
-      path: file.path,
+      path: window.electron.audio.getPathForFile(file),
       size: file.size,
       status: 'pending' as const,
       progress: 0,
@@ -107,6 +100,17 @@ export function Converter() {
     }
 
     setConverting(false);
+
+    // Show completion toast
+    const results = files.filter(f => pendingFiles.some(p => p.id === f.id));
+    const successCount = results.filter(f => f.status === 'done').length;
+    const errorCount = results.filter(f => f.status === 'error').length;
+
+    if (errorCount === 0) {
+      toast.success(`Converted ${successCount} file${successCount !== 1 ? 's' : ''}`);
+    } else {
+      toast.warning(`Converted ${successCount} files, ${errorCount} failed`);
+    }
   };
 
   // Listen for progress events
@@ -176,11 +180,12 @@ export function Converter() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {CONVERSION_PRESETS.map((preset) => (
-                <SelectItem key={preset.bitrate || 'lossless'} value={preset.bitrate || 'lossless'}>
-                  {preset.name} - {preset.description}
-                </SelectItem>
-              ))}
+              <SelectItem value="64k">64 kbps (Voice)</SelectItem>
+              <SelectItem value="96k">96 kbps (Standard)</SelectItem>
+              <SelectItem value="128k">128 kbps (High)</SelectItem>
+              <SelectItem value="192k">192 kbps (Very High)</SelectItem>
+              <SelectItem value="256k">256 kbps (Music)</SelectItem>
+              <SelectItem value="320k">320 kbps (Max)</SelectItem>
             </SelectContent>
           </Select>
         </div>

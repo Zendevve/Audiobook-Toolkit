@@ -6,8 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { StepIndicator } from '@/components/wizard/StepIndicator';
 import type { AudioFile } from '@/types';
-import type { BookMetadata } from '@/components/MetadataPanel';
-import { cn } from '@/lib/utils';
+import type { BookMetadata } from '@/types';
+import { cn, formatDuration } from '@/lib/utils';
 
 type OutputFormat = 'm4b' | 'mp3' | 'aac';
 type Bitrate = '64k' | '96k' | '128k' | '192k';
@@ -39,12 +39,7 @@ export function ExportStep({
 }: ExportStepProps) {
   const totalDuration = files.reduce((acc, f) => acc + (f.metadata.duration || 0), 0);
 
-  const formatDuration = () => {
-    const hours = Math.floor(totalDuration / 3600);
-    const mins = Math.floor((totalDuration % 3600) / 60);
-    if (hours > 0) return `${hours}h ${mins}m`;
-    return `${mins} min`;
-  };
+
 
   const showMp3Warning = outputFormat === 'mp3' && files.length > 1;
 
@@ -135,7 +130,7 @@ export function ExportStep({
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5" />
-                    {formatDuration()}
+                    {formatDuration(totalDuration, 'human')}
                   </span>
                 </div>
               </div>

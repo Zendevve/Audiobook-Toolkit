@@ -1,5 +1,6 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import { Titlebar } from '@/components/Titlebar';
 import { UploadStep } from '@/components/wizard/UploadStep';
 import { ArrangeStep } from '@/components/wizard/ArrangeStep';
@@ -7,9 +8,10 @@ import { MetadataStep } from '@/components/wizard/MetadataStep';
 import { ExportStep } from '@/components/wizard/ExportStep';
 import { Converter } from '@/components/Converter';
 import { defaultMetadata } from '@/components/MetadataPanel';
-import type { BookMetadata } from '@/components/MetadataPanel';
 import { AudioAnalyzer } from '@/lib/audio-analyzer';
-import type { AudioFile } from '@/types';
+import { useUndoRedo } from '@/hooks/useUndoRedo';
+import { SettingsModal } from '@/components/SettingsModal';
+import type { AudioFile, BookMetadata, UserSettings } from '@/types';
 
 type OutputFormat = 'm4b' | 'mp3' | 'aac';
 type Bitrate = '64k' | '96k' | '128k' | '192k';
@@ -22,12 +24,93 @@ export default function Dashboard() {
   const [currentStep, setCurrentStep] = useState(1);
 
   // Data state
-  const [files, setFiles] = useState<AudioFile[]>([]);
+  // Undo/Redo Hook for Files
+  const {
+    state: files,
+    set: setFiles,
+    undo,
+    redo,
+    reset: resetFiles
+  } = useUndoRedo<AudioFile[]>([]);
+
   const [metadata, setMetadata] = useState<BookMetadata>(defaultMetadata);
   const [outputFormat, setOutputFormat] = useState<OutputFormat>('mp3');
   const [bitrate, setBitrate] = useState<Bitrate>('64k');
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState({ percent: 0, timemark: '' });
+  const [showSettings, setShowSettings] = useState(false);
+  const [userSettings, setUserSettings] = useState<UserSettings>({});
+
+  // Tracking refs for cleanup
+  const filesRef = useRef(files);
+  useEffect(() => {
+    filesRef.current = files;
+  }, [files]);
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      filesRef.current.forEach(f => {
+        if (f.metadata?.cover?.startsWith('blob:')) {
+          URL.revokeObjectURL(f.metadata.cover);
+        }
+      });
+    };
+  }, []);
+
+  // Load Settings
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        if (window.electron?.settings) {
+          const data = await window.electron.settings.read();
+          setUserSettings(data);
+          if (data.defaultOutputFormat) setOutputFormat(data.defaultOutputFormat as OutputFormat);
+          if (data.defaultBitrate) setBitrate(data.defaultBitrate as Bitrate);
+        }
+      } catch (e) {
+        console.error('Failed to load settings', e);
+      }
+    };
+    loadSettings();
+  }, []);
+
+  // Keyboard Shortcuts for Undo/Redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check if input is focused to avoid conflicts
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) return;
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          redo();
+        } else {
+          undo();
+        }
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo]);
+
+  const handleSaveSettings = useCallback(async (newSettings: UserSettings) => {
+    try {
+      const result = await window.electron.settings.write(newSettings);
+      if (result.success) {
+        setUserSettings(newSettings);
+        if (newSettings.defaultOutputFormat) setOutputFormat(newSettings.defaultOutputFormat as OutputFormat);
+        if (newSettings.defaultBitrate) setBitrate(newSettings.defaultBitrate as Bitrate);
+      }
+    } catch (e) {
+      console.error('Failed to save settings', e);
+      throw e;
+    }
+  }, []);
 
 
 
@@ -48,7 +131,13 @@ export default function Dashboard() {
   }, []);
 
   const removeFile = useCallback((id: string) => {
-    setFiles((prev) => prev.filter((f) => f.id !== id));
+    setFiles((prev) => {
+      const fileToRemove = prev.find(f => f.id === id);
+      if (fileToRemove?.metadata?.cover?.startsWith('blob:')) {
+        URL.revokeObjectURL(fileToRemove.metadata.cover);
+      }
+      return prev.filter((f) => f.id !== id);
+    });
   }, []);
 
   const updateMetadata = useCallback((id: string, field: 'title' | 'artist', value: string) => {
@@ -97,16 +186,32 @@ export default function Dashboard() {
         coverPath: metadata.coverData, // Pass cover data
         outputFormat,
         bitrate,
+        defaultOutputDirectory: userSettings.defaultOutputDirectory,
       });
 
       if (result.success) {
+        toast.success('Audiobook created successfully!', {
+          description: `Saved to: ${result.outputPath}`,
+        });
         // Reset to start
+        // Cleanup and reset
+        files.forEach(f => {
+          if (f.metadata?.cover?.startsWith('blob:')) {
+            URL.revokeObjectURL(f.metadata.cover);
+          }
+        });
         setCurrentStep(1);
-        setFiles([]);
+        resetFiles([]);
         setMetadata(defaultMetadata);
+      } else if (result.cancelled) {
+        toast.info('Export cancelled');
       }
+      setProcessing(false);
     } catch (error) {
       console.error('Processing error:', error);
+      toast.error('Failed to create audiobook', {
+        description: (error as Error).message,
+      });
       setProcessing(false);
     }
   }, [files, metadata, outputFormat, bitrate]);
@@ -128,20 +233,28 @@ export default function Dashboard() {
     };
 
     try {
-      // @ts-expect-error Electron IPC
+
       const result = await window.electron.project.save(projectData);
       if (result.success) {
-        console.log('Project saved:', result.filePath);
+        if (result.filePath && window.electron?.recent) {
+          await window.electron.recent.add(result.filePath);
+        }
+        toast.success('Project saved', {
+          description: result.filePath,
+        });
       }
     } catch (error) {
       console.error('Save project error:', error);
+      toast.error('Failed to save project', {
+        description: (error as Error).message,
+      });
     }
   }, [files, metadata, outputFormat, bitrate]);
 
   // Load Project Handler
   const handleLoadProject = useCallback(async () => {
     try {
-      // @ts-expect-error Electron IPC
+
       const result = await window.electron.project.load();
       if (result.success && result.data) {
         const project = result.data;
@@ -151,12 +264,45 @@ export default function Dashboard() {
         if (project.outputFormat) setOutputFormat(project.outputFormat);
         if (project.bitrate) setBitrate(project.bitrate);
 
-        // Note: We can't restore actual File objects from paths
-        // User needs to re-add files after loading
-        console.log('Project loaded. Note: Audio files need to be re-added.');
+        if (result.filePath && window.electron?.recent) {
+          await window.electron.recent.add(result.filePath);
+        }
+
+        toast.success('Project loaded', {
+          description: 'Audio files need to be re-added.',
+        });
       }
     } catch (error) {
       console.error('Load project error:', error);
+      toast.error('Failed to load project', {
+        description: (error as Error).message,
+      });
+    }
+  }, []);
+
+  const handleLoadRecentProject = useCallback(async (path: string) => {
+    try {
+      const result = await window.electron.project.load(path);
+      if (result.success && result.data) {
+        const project = result.data;
+        if (project.metadata) setMetadata(project.metadata);
+        if (project.outputFormat) setOutputFormat(project.outputFormat);
+        if (project.bitrate) setBitrate(project.bitrate);
+
+        if (result.filePath && window.electron?.recent) {
+          await window.electron.recent.add(result.filePath);
+        }
+
+        setToolMode('binder');
+        setCurrentStep(1); // Go to upload step since files need re-adding usually (unless I store file paths and they are valid?)
+        // Currently project save stores file list but they might not be valid.
+        // Logic just restores metadata.
+
+        toast.success('Project loaded');
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to load project');
     }
   }, []);
 
@@ -170,7 +316,12 @@ export default function Dashboard() {
       </div>
 
       {/* Titlebar with project controls */}
-      <Titlebar onSaveProject={handleSaveProject} onLoadProject={handleLoadProject} />
+      <Titlebar
+        onSaveProject={handleSaveProject}
+        onLoadProject={handleLoadProject}
+        onLoadRecentProject={handleLoadRecentProject}
+        onOpenSettings={() => setShowSettings(true)}
+      />
 
       {/* Tool Navigation Tabs */}
       <div className="flex border-b border-white/[0.06] px-6 bg-[#0a0a0c]/50 backdrop-blur-sm">
@@ -181,7 +332,7 @@ export default function Dashboard() {
             : 'text-[#8A8F98] hover:text-[#EDEDEF]'
             }`}
         >
-          Audiobook Binder
+          Audiobook Toolkit
           {toolMode === 'binder' && (
             <motion.div
               layoutId="activeTab"
@@ -210,7 +361,7 @@ export default function Dashboard() {
 
       {/* Step Content */}
       <AnimatePresence mode="wait">
-        {currentStep === 1 && (
+        {toolMode === 'binder' && currentStep === 1 && (
           <UploadStep
             key="upload"
             files={files}
@@ -220,7 +371,7 @@ export default function Dashboard() {
             currentStep={currentStep}
           />
         )}
-        {currentStep === 2 && (
+        {toolMode === 'binder' && currentStep === 2 && (
           <ArrangeStep
             key="arrange"
             files={files}
@@ -232,7 +383,7 @@ export default function Dashboard() {
             currentStep={currentStep}
           />
         )}
-        {currentStep === 3 && (
+        {toolMode === 'binder' && currentStep === 3 && (
           <MetadataStep
             key="metadata"
             files={files}
@@ -243,7 +394,7 @@ export default function Dashboard() {
             currentStep={currentStep}
           />
         )}
-        {currentStep === 4 && (
+        {toolMode === 'binder' && currentStep === 4 && (
           <ExportStep
             key="export"
             files={files}
@@ -291,6 +442,13 @@ export default function Dashboard() {
           </motion.div>
         )}
       </AnimatePresence>
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        settings={userSettings}
+        onSave={handleSaveSettings}
+      />
 
     </div>
   );

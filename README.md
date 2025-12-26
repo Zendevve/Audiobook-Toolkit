@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Audiobook Toolkit](https://via.placeholder.com/1200x300/1a1a2e/FFFFFF?text=Audiobook+Toolkit)
+![Audiobook Toolkit](docs/images/logo.png)
 
 **Your complete audiobook workflow solution.**
 Merge, convert, and enhance audiobooks - all in one beautiful desktop app.

@@ -21,7 +21,7 @@
 
 ---------------
 
-A comprehensive, open-source desktop application for managing and upgrading your audiobook collection. Merge scattered MP3s into chapterized M4Bs, split excessively large files, convert formats, and fix compatibility issues for legacy devices—all in a beautiful, dark-mode interface.
+A comprehensive, open-source desktop application for managing and upgrading your digital audiobook collection. Turn scattered, proprietary, or messy audio files into a single, clean, and compatible library.
 
 ![Files Ready View](docs/images/files-ready-view.png)
 
@@ -40,38 +40,62 @@ A comprehensive, open-source desktop application for managing and upgrading your
 
 ## Features
 
-- **📚 Audiobook Binder**: Merge multiple audio files (MP3, M4A, etc.) into a single, chapterized M4B audiobook.
-- **✂️ Chapter Splitter**: Losslessly split large audiobook files back into individual chapters based on metadata.
-- **🔄 Format Converter**: Batch convert audio files between common formats (M4B, MP3, FLAC, AAC) with high quality.
-- **🍎 iTunes Compatibility**: "Smart Fix" mode to ensure bookmarked playback works on older iPods and Apple Books.
-- **📝 Metadata Editor**: Rich editor for Title, Author, Narrator, Series, Cover Art, and more.
-- **🪄 Smart Features**: Auto-fill metadata from online sources, smart artwork detection.
-- **🕵️ Privacy First**: Runs 100% locally on your machine using FFmpeg/Electron. No cloud uploads, no tracking.
-- **🎨 Modern UI**: Beautiful dark-mode interface with premium aesthetics/glassmorphism.
+### 📚 Audiobook Binder
+*Stop dealing with "Chapter 001.mp3", "Chapter 002.mp3"...*
+- **Multiprocess Binding**: Merges MP3, M4A, FLAC, OGG, and WAV files into a single `.m4b` container.
+- **Smart Chapters**: Automatically generates chapter markers based on input filenames or reads existing metadata.
+- **Stream Copy Mode**: Detects compatible input streams (e.g., AAC input to M4B output) and stitches them without re-encoding, preserving 100% of original quality.
+
+### ✂️ Chapter Splitter
+*Extract specific chapters from a massive 30-hour audiobook file.*
+- **Lossless Splitting**: Extracts chapters using FFmpeg stream copying—instant speed, zero quality loss.
+- **Metadata Aware**: Reads embedded Apple layout and standard MP4/QuickTime chapter markers.
+- **Precise**: Handles sample-accurate split points to ensure seamless playback.
+
+### 🔄 Format Converter
+*Modernize your library or create compatible versions for legacy devices.*
+- **Batch Processing**: Queue up to 100+ files for sequential conversion.
+- **Metadata Retention**: Preserves Title, Author, Narrator, Album Artist, Genre, Year, and embedded Cover Art during conversion.
+- **Supported Formats**:
+    - **Input**: M4B, M4A, MP3, FLAC, AAC, WAV
+    - **Output**: M4B (AAC), M4A (AAC), MP3 (LAME), FLAC (Lossless)
+- **High Efficiency**: Uses multi-core optimized FFmpeg encoding presets.
+
+### 🍎 iTunes Compatibility Engine
+*Fix the dreaded "forgetting playback position" bug.*
+- **32-bit Integer Fix**: Modifies internal file atoms (stco/co64) to ensure compatibility with 32-bit legacy devices (iPod Classic, older iPhones, 3rd party car stereos).
+- **QuickTime Optimization**: Restructures file atoms for stream-ability and faster loading on Apple Books.
+
+### 🕵️ Privacy & Local First
+- **Offline**: Zero network calls required for core functionality.
+- **Transparent**: No analytics, no tracking pixels, no account requirements.
+- **Verified**: Build directly from source to verify exactly what's running on your machine.
 
 ## Background Story
 
-I built **Audiobook Toolkit** because I was tired of the messy state of digital audiobooks. Archiving a collection often means dealing with inconsistent formats—some books are folders of 100 MP3s, others are single 2GB M4B files that crash old players.
+I built **Audiobook Toolkit** because the current state of digital audiobook management is user-hostile.
 
-Existing tools were either command-line only (difficult to use) or expensive closed-source software. I wanted a tool that respects the user: **Open Core**, privacy-respecting, and powerful enough for the power user but simple enough for anyone. Following the **MCAF (Managed Code AI Framework)**, this project aims to set a gold standard for modern desktop tools.
+Archivists and collectors often deal with "scene releases" that come as hundreds of poorly tagged MP3s, or proprietary rips that don't play nice with standard players. Existing solutions fall into two camps: powerful CLI tools (ffmpeg, mp3tag) that require technical expertise, or expensive closed-source GUI apps.
+
+I wanted a tool that respects the user: **Open Core**, privacy-respecting, and powerful enough for the power user but simple enough for anyone. Following the **MCAF (Managed Code AI Framework)**, this project aims to set a gold standard for modern desktop tools, proving that Electron apps can be fast, beautiful, and respectful of system resources.
 
 ## Tech Stack
 
 | Category | Technologies |
 |----------|-------------|
-| **Frontend** | React, TypeScript, TailwindCSS, Shadcn/UI, Vite, Framer Motion |
-| **Backend** | Electron (Node.js), FFmpeg |
-| **Audio Engine** | `fluent-ffmpeg`, `ffmpeg-static`, `ffprobe-static` |
-| **Testing** | Vitest (Unit/Integration), Playwright (E2E) |
-| **Styling** | TailwindCSS, Radix UI primitives |
+| **Frontend** | React 18, TypeScript 5, TailwindCSS, Shadcn/UI, Framer Motion |
+| **Backend** | Electron 28 (Node.js), FFmpeg 6.1 (via fluent-ffmpeg) |
+| **Audio Engine** | `ffmpeg-static` (bundled binaries), `ffprobe-static` |
+| **Testing** | Vitest (Unit/Integration), Playwright (E2E), React Testing Library |
+| **State** | React Context + IPC Bridge (for system operations) |
+| **Styling** | TailwindCSS, Radix UI primitives, Lucide Icons |
 
 ## Getting Started
 
 ### Prerequisites
 
 - **Node.js** ≥ 18.x
-- **FFmpeg** (bundled via `ffmpeg-static` for dev, but good to have)
-- **npm** or **yarn**
+- **OS**: Windows 10/11, macOS 12+, or Linux (Debian/RPM)
 
 ### Installation
 
@@ -99,10 +123,10 @@ Existing tools were either command-line only (difficult to use) or expensive clo
 
 ## Documentation
 
-- [Feature Documentation](docs/Features/) - Detailed feature specs
-- [Architecture Decisions](docs/ADR/) - ADRs for technical choices
-- [Testing Strategy](docs/Testing/strategy.md) - How we test
-- [AGENTS.md](AGENTS.md) - AI coding guidelines (MCAF framework)
+- [Feature Documentation](docs/Features/) - Detailed specs for Binder, Splitter, Converter.
+- [Architecture Decisions](docs/ADR/) - Why we chose Electron, MCAF, etc.
+- [Testing Strategy](docs/Testing/strategy.md) - Our approach to high reliability.
+- [AGENTS.md](AGENTS.md) - AI coding guidelines (MCAF framework).
 
 ## Philosophy: Open Core
 
@@ -121,11 +145,15 @@ Existing tools were either command-line only (difficult to use) or expensive clo
 │   └── CONTRIBUTING.md # Contribution guidelines
 ├── docs/             # Documentation & assets
 │   ├── FMHY_SUBMISSION.md # Marketing pitch
+│   ├── Features/     # Detailed feature specs
+│   └── ADR/          # Architecture decisions
 ├── src/
-│   ├── components/   # React UI components (Dashboard, Binder, etc.)
+│   ├── components/   # React UI components
+│   │   ├── wizard/   # Binder Wizard steps
+│   │   └── ui/       # Shared UI components
 │   ├── electron/     # Electron main process code
-│   ├── lib/          # Utilities (FFmpeg wrappers, audio analysis)
-│   └── types.ts      # TypeScript definitions
+│   └── lib/          # Utilities (FFmpeg wrappers)
+├── AGENTS.md         # MCAF AI coding guidelines
 └── README.md         # This file
 ```
 

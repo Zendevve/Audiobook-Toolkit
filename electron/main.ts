@@ -105,6 +105,7 @@ interface ProcessOptions {
     narrator?: string;
   };
   defaultOutputDirectory?: string;
+  itunesCompatibility?: boolean; // Enable iTunes compatibility mode for very long books
 }
 
 // IPC Handlers
@@ -416,7 +417,12 @@ ipcMain.handle('audio:process', async (_event, options: ProcessOptions) => {
         if (bookMetadata.narrator) outputOptions.push('-metadata', `composer=${bookMetadata.narrator}`);
       }
 
-
+      // iTunes Compatibility: Use faststart to move moov atom to beginning
+      // This helps iTunes/Apple devices handle very long audiobooks better
+      if (options.itunesCompatibility) {
+        outputOptions.push('-movflags', '+faststart');
+        console.log('[MERGE] iTunes Compatibility mode enabled (faststart)');
+      }
     }
 
     command
@@ -689,4 +695,140 @@ ipcMain.handle('audio:batchConvert', async (_event, requests: ConversionRequest[
   }
 
   return results;
+});
+
+// ========================================
+// Chapter Splitting Handlers
+// ========================================
+
+interface ChapterInfo {
+  id: number;
+  title: string;
+  start: number;
+  end: number;
+  duration: number;
+}
+
+interface SplitRequest {
+  inputPath: string;
+  outputDirectory: string;
+  chapters: ChapterInfo[]; // Chapters to export
+  outputFormat: 'm4b' | 'm4a' | 'mp3';
+  fileNameTemplate: string; // e.g. "{index} - {title}"
+}
+
+ipcMain.handle('audio:read-chapters', async (_event, filePath: string) => {
+  try {
+    // We use spawn to run ffprobe directly to get JSON output with chapters
+    const { spawn } = require('child_process');
+
+    return new Promise((resolve, reject) => {
+      const ffprobe = spawn(ffprobePath.path, [
+        '-v', 'quiet',
+        '-print_format', 'json',
+        '-show_chapters',
+        '-show_format',
+        filePath
+      ]);
+
+      let stdout = '';
+      let stderr = '';
+
+      ffprobe.stdout.on('data', (data: any) => stdout += data);
+      ffprobe.stderr.on('data', (data: any) => stderr += data);
+
+      ffprobe.on('close', (code: number) => {
+        if (code !== 0) {
+          reject(new Error(`ffprobe exited with code ${code}: ${stderr}`));
+          return;
+        }
+
+        try {
+          const data = JSON.parse(stdout);
+          const chapters = (data.chapters || []).map((c: any, index: number) => ({
+            id: index + 1,
+            title: c.tags?.title || `Chapter ${index + 1}`,
+            start: parseFloat(c.start_time),
+            end: parseFloat(c.end_time),
+            duration: parseFloat(c.end_time) - parseFloat(c.start_time)
+          }));
+          resolve({
+            chapters,
+            duration: parseFloat(data.format?.duration || '0'),
+            format: data.format?.format_name,
+            bitrate: data.format?.bit_rate
+          });
+        } catch (err) {
+          reject(new Error('Failed to parse ffprobe output'));
+        }
+      });
+    });
+  } catch (err) {
+    console.error('[SPLIT] Error reading chapters:', err);
+    throw err;
+  }
+});
+
+ipcMain.handle('audio:split-by-chapters', async (_event, request: SplitRequest) => {
+  const { inputPath, outputDirectory, chapters, outputFormat, fileNameTemplate } = request;
+  const results: any[] = [];
+
+  if (!fs.existsSync(outputDirectory)) {
+    fs.mkdirSync(outputDirectory, { recursive: true });
+  }
+
+
+
+  for (let i = 0; i < chapters.length; i++) {
+    const chapter = chapters[i];
+    const safeTitle = chapter.title.replace(/[^a-z0-9]/gi, '_');
+
+    // Construct filename
+    let filename = fileNameTemplate
+      .replace('{index}', String(chapter.id).padStart(2, '0'))
+      .replace('{title}', safeTitle)
+      + `.${outputFormat}`;
+
+    const outputPath = path.join(outputDirectory, filename);
+
+    const progressData = {
+      message: `Splitting chapter ${i + 1}/${chapters.length}`,
+      current: i + 1,
+      total: chapters.length,
+      chapter: chapter.title
+    };
+
+    // Send progress to UI
+    if (mainWindow) {
+      mainWindow.webContents.send('audio:split-progress', progressData);
+    }
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        // Use ffmpeg to extract segment
+        // -ss start -to end -c copy (fast stream copy) avoiding re-encode
+        const cmd = ffmpeg(inputPath)
+          .setStartTime(chapter.start)
+          .setDuration(chapter.duration)
+          .output(outputPath)
+          // Try to copy codec if possible (m4b->m4b), otherwise re-encode might be needed
+          // For now, default to stream copy for speed and quality
+          .outputOptions(['-c', 'copy', '-map_metadata', '0'])
+          .outputOptions([
+            '-metadata', `track=${chapter.id}/${chapters.length}`,
+            '-metadata', `title=${chapter.title}`
+          ])
+          .on('end', () => resolve())
+          .on('error', (err) => reject(err));
+
+        cmd.run();
+      });
+      results.push({ success: true, path: outputPath, chapterId: chapter.id });
+    } catch (err) {
+      console.error(`[SPLIT] Failed chapter ${chapter.id}:`, err);
+      results.push({ success: false, error: (err as Error).message, chapterId: chapter.id });
+    }
+  }
+
+  return { success: true, results };
 });

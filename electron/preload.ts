@@ -38,6 +38,12 @@ contextBridge.exposeInMainWorld('electron', {
       ipcRenderer.invoke('audio:convert', request),
     batchConvert: (requests: Array<{ inputPath: string; outputFormat: string; bitrate?: string }>) =>
       ipcRenderer.invoke('audio:batchConvert', requests),
+    // Chapter Splitter
+    readChapters: (filePath: string) => ipcRenderer.invoke('audio:read-chapters', filePath),
+    splitByChapters: (options: any) => ipcRenderer.invoke('audio:split-by-chapters', options),
+    onSplitProgress: (callback: (data: any) => void) => {
+      ipcRenderer.on('audio:split-progress', (_, data) => callback(data));
+    },
   },
   // For direct IPC access (required for image upload events)
   ipcRenderer: {

@@ -142,7 +142,13 @@ export function Converter() {
   const doneCount = files.filter((f) => f.status === 'done').length;
 
   return (
-    <div className="h-full flex flex-col p-6 space-y-6">
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      className="flex-1 flex flex-col p-6 space-y-6"
+    >
       {/* Header */}
       <div className="space-y-2">
         <h1 className="text-3xl font-bold">Format Converter</h1>
@@ -315,6 +321,6 @@ export function Converter() {
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

@@ -323,6 +323,10 @@ ipcMain.handle("audio:process", async (_event, options) => {
         if (bookMetadata.year) outputOptions.push("-metadata", `date=${bookMetadata.year}`);
         if (bookMetadata.narrator) outputOptions.push("-metadata", `composer=${bookMetadata.narrator}`);
       }
+      if (options.itunesCompatibility) {
+        outputOptions.push("-movflags", "+faststart");
+        console.log("[MERGE] iTunes Compatibility mode enabled (faststart)");
+      }
     }
     command.outputOptions(outputOptions).output(outputPath).on("start", (cmd) => {
       console.log("[MERGE] FFmpeg command:", cmd);
@@ -510,4 +514,89 @@ ipcMain.handle("audio:batchConvert", async (_event, requests) => {
     results.push(result);
   }
   return results;
+});
+ipcMain.handle("audio:read-chapters", async (_event, filePath) => {
+  try {
+    const { spawn } = require$1("child_process");
+    return new Promise((resolve, reject) => {
+      const ffprobe = spawn(ffprobePath.path, [
+        "-v",
+        "quiet",
+        "-print_format",
+        "json",
+        "-show_chapters",
+        "-show_format",
+        filePath
+      ]);
+      let stdout = "";
+      let stderr = "";
+      ffprobe.stdout.on("data", (data) => stdout += data);
+      ffprobe.stderr.on("data", (data) => stderr += data);
+      ffprobe.on("close", (code) => {
+        if (code !== 0) {
+          reject(new Error(`ffprobe exited with code ${code}: ${stderr}`));
+          return;
+        }
+        try {
+          const data = JSON.parse(stdout);
+          const chapters = (data.chapters || []).map((c, index) => ({
+            id: index + 1,
+            title: c.tags?.title || `Chapter ${index + 1}`,
+            start: parseFloat(c.start_time),
+            end: parseFloat(c.end_time),
+            duration: parseFloat(c.end_time) - parseFloat(c.start_time)
+          }));
+          resolve({
+            chapters,
+            duration: parseFloat(data.format?.duration || "0"),
+            format: data.format?.format_name,
+            bitrate: data.format?.bit_rate
+          });
+        } catch (err) {
+          reject(new Error("Failed to parse ffprobe output"));
+        }
+      });
+    });
+  } catch (err) {
+    console.error("[SPLIT] Error reading chapters:", err);
+    throw err;
+  }
+});
+ipcMain.handle("audio:split-by-chapters", async (_event, request) => {
+  const { inputPath, outputDirectory, chapters, outputFormat, fileNameTemplate } = request;
+  const results = [];
+  if (!fs.existsSync(outputDirectory)) {
+    fs.mkdirSync(outputDirectory, { recursive: true });
+  }
+  for (let i = 0; i < chapters.length; i++) {
+    const chapter = chapters[i];
+    const safeTitle = chapter.title.replace(/[^a-z0-9]/gi, "_");
+    let filename = fileNameTemplate.replace("{index}", String(chapter.id).padStart(2, "0")).replace("{title}", safeTitle) + `.${outputFormat}`;
+    const outputPath = path.join(outputDirectory, filename);
+    const progressData = {
+      message: `Splitting chapter ${i + 1}/${chapters.length}`,
+      current: i + 1,
+      total: chapters.length,
+      chapter: chapter.title
+    };
+    if (mainWindow) {
+      mainWindow.webContents.send("audio:split-progress", progressData);
+    }
+    try {
+      await new Promise((resolve, reject) => {
+        const cmd = ffmpeg(inputPath).setStartTime(chapter.start).setDuration(chapter.duration).output(outputPath).outputOptions(["-c", "copy", "-map_metadata", "0"]).outputOptions([
+          "-metadata",
+          `track=${chapter.id}/${chapters.length}`,
+          "-metadata",
+          `title=${chapter.title}`
+        ]).on("end", () => resolve()).on("error", (err) => reject(err));
+        cmd.run();
+      });
+      results.push({ success: true, path: outputPath, chapterId: chapter.id });
+    } catch (err) {
+      console.error(`[SPLIT] Failed chapter ${chapter.id}:`, err);
+      results.push({ success: false, error: err.message, chapterId: chapter.id });
+    }
+  }
+  return { success: true, results };
 });

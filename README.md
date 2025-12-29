@@ -1,179 +1,135 @@
-# Audiobook Toolkit
+
+<div align="center">
+    <a href="https://github.com/Zendevve/audiobook-toolkit" target="_blank">
+        <img src="docs/images/logo.png" width="200" height="200" alt="Audiobook Toolkit Logo"/>
+    </a>
+</div>
+
+<h1 align="center">Audiobook Toolkit</h1>
 
 <div align="center">
 
-<img src="docs/images/logo.png" width="200" alt="Audiobook Toolkit" />
-
-**Your complete audiobook workflow solution.**
-Merge, convert, and enhance audiobooks - all in one beautiful desktop app.
-
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3%20%2B%20Commons%20Clause-blue.svg)](LICENSE)
-[![Electron](https://img.shields.io/badge/Electron-28-2B2E3A?logo=electron)](https://www.electronjs.org/)
-[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-
-[Download Prebuilt Binary](https://guinto2.gumroad.com/l/audiobooktoolkit) · [Report Bug](https://guinto2.gumroad.com/l/audiobooktoolkit) · [Support Development](https://github.com/sponsors/Zendevve)
+[![PRG Gold](https://img.shields.io/badge/PRG-Gold%20Project-FFD700?style=for-the-badge&logo=data:image/svg%2bxml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBzdGFuZGFsb25lPSJubyI/Pgo8IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDIwMDEwOTA0Ly9FTiIKICJodHRwOi8vd3d3LnczLm9yZy9UUi8yMDAxL1JFQy1TVkctMjAwMTA5MDQvRFREL3N2ZzEwLmR0ZCI+CjxzdmcgdmVyc2lvbj0iMS4wIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCiB3aWR0aD0iMjYuMDAwMDAwcHQiIGhlaWdodD0iMzQuMDAwMDAwcHQiIHZpZXdCb3g9IjAgMCAyNi4wMDAwMDAgMzQuMDAwMDAwIgogcHJlc2VydmVBc3BlY3RSYXRpbz0ieE1pZFlNaWQgbWVldCI+Cgo8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLjAwMDAwMCwzNC4wMDAwMDApIHNjYWxlKDAuMTAwMDAwLC0wLjEwMDAwMCkiCmZpbGw9IiNGRkQ3MDAiIHN0cm9rZT0ibm9uZSI+CjxwYXRoIGQ9Ik0xMiAzMjggYy04IC04IC0xMiAtNTEgLTEyIC0xMzUgMCAtMTA5IDIgLTEyNSAxOSAtMTQwIDQyIC0zOCA0OAotNDIgNTkgLTMxIDcgNyAxNyA2IDMxIC0xIDEzIC03IDIxIC04IDIxIC0yIDAgNiAyOCAxMSA2MyAxMyBsNjIgMyAwIDE1MCAwCjE1MCAtMTE1IDMgYy04MSAyIC0xMTkgLTEgLTEyOCAtMTB6IG0xMDIgLTc0IGMtNiAtMzMgLTUgLTM2IDE3IC0zMiAxOCAyIDIzCjggMjEgMjUgLTMgMjQgMTUgNDAgMzAgMjUgMTQgLTE0IC0xNyAtNTkgLTQ4IC02NiAtMjAgLTUgLTIzIC0xMSAtMTggLTMyIDYKLTIxIDMgLTI1IC0xMSAtMjIgLTE2IDIgLTE4IDEzIC0xOCA2NiAxIDc3IDAgNzIgMTggNzIgMTMgMCAxNSAtNyA5IC0zNnoKbTExNiAtMTY5IGMwIC0yMyAtMyAtMjUgLTQ5IC0yNSAtNDAgMCAtNTAgMyAtNTQgMjAgLTMgMTQgLTE0IDIwIC0zMiAyMCAtMTgKMCAtMjkgLTYgLTMyIC0yMCAtNyAtMjUgLTIzIC0yNiAtMjMgLTIgMCAyOSA4IDMyIDEwMiAzMiA4NyAwIDg4IDAgODggLTI1eiIvPgo8L2c+Cjwvc3ZnPgo=)](https://github.com/scottgriv/PRG-Personal-Repository-Guidelines)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3%20%2B%20Commons%20Clause-blue.svg?style=for-the-badge)](LICENSE)
+[![Electron](https://img.shields.io/badge/Electron-28-2B2E3A?style=for-the-badge&logo=electron)](https://www.electronjs.org/)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
 </div>
 
----
+---------------
 
-## ✨ Features
+A comprehensive, open-source desktop application for managing and upgrading your audiobook collection. Merge scattered MP3s into chapterized M4Bs, split excessively large files, converts formats, and fix compatibility issues for legacy devices—all in a beautiful, dark-mode interface.
 
-📚 **Audiobook Binder** - Merge multiple audio files into a single audiobook with chapter markers
-🔄 **Format Converter** - Convert between M4B, MP3, M4A, AAC, and FLAC _(NEW in v0.2.0)_
-📝 **Rich Metadata Editor** - Edit title, author, narrator, series, cover art, and more
-🪄 **Smart Features** - Auto-fill metadata from online sources, smart artwork detection
-🎨 **Modern UI** - Beautiful dark-mode interface with premium aesthetics
-🔓 **100% Open Source** - Every feature available in the source code (Open Core model)
-
-![Format Converter Demo](docs/images/converter-demo.png)
 ![Files Ready View](docs/images/files-ready-view.png)
 
+## Table of Contents
 
----
+- [Features](#features)
+- [Background Story](#background-story)
+- [Getting Started](#getting-started)
+    - [Prerequisites](#prerequisites)
+    - [Installation](#installation)
+- [What's Inside?](#whats-inside)
+- [What's Next?](#whats-next)
+- [Contributing](#contributing)
+- [Resources](#resources)
+- [License](#license)
+- [Footer](#footer)
 
-## 🛠️ Tech Stack
+## Features
 
-| Category | Technologies |
-|----------|-------------|
-| **Frontend** | React, TypeScript, TailwindCSS, Shadcn/UI, Vite |
-| **Backend** | Electron (Node.js), FFmpeg |
-| **Audio Engine** | `fluent-ffmpeg`, `ffmpeg-static`, `ffprobe-static` |
-| **Testing** | Vitest (Unit/Integration), Playwright (E2E) |
-| **Styling** | TailwindCSS, Radix UI primitives |
+- **📚 Audiobook Binder**: Merge multiple audio files (MP3, M4A, etc.) into a single, chapterized M4B audiobook.
+- **✂️ Chapter Splitter**: Losslessly split large audiobook files back into individual chapters based on metadata.
+- **🔄 Format Converter**: Batch convert audio files between common formats (M4B, MP3, FLAC, AAC) with high quality.
+- **🍎 iTunes Compatibility**: "Smart Fix" mode to ensure bookmarked playback works on older iPods and Apple Books.
+- **📝 Metadata Editor**: Rich editor for Title, Author, Cover Art, and more.
+- **🕵️ Privacy First**: Runs 100% locally on your machine using FFmpeg/Electron. No cloud uploads, no tracking.
 
----
+## Background Story
 
-## 🎯 Quick Start
+I built **Audiobook Toolkit** because I was tired of the messy state of digital audiobooks. Archiving a collection often means dealing with inconsistent formats—some books are folders of 100 MP3s, others are single 2GB M4B files that crash old players.
+
+Existing tools were either command-line only (difficult to use) or expensive closed-source software. I wanted a tool that respects the user: **Open Core**, privacy-respecting, and powerful enough for the power user but simple enough for anyone. Following the **MCAF (Managed Code AI Framework)**, this project aims to set a gold standard for modern desktop tools.
+
+## Getting Started
 
 ### Prerequisites
 
 - **Node.js** ≥ 18.x
-- **FFmpeg** (bundled via `ffmpeg-static`)
 - **npm** or **yarn**
 
 ### Installation
 
-```bash
-# Clone the repo
-git clone https://github.com/Zendevve/audiobook-toolkit.git
-cd audiobook-toolkit
+1.  Clone the repository:
+    ```bash
+    git clone https://github.com/Zendevve/audiobook-toolkit.git
+    cd audiobook-toolkit
+    ```
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
+3.  Start the development server:
+    ```bash
+    npm run dev
+    ```
 
-# Install dependencies
-npm install
-# or
-yarn install
+## What's Inside?
+
+```bash
+├── .github/          # GitHub templates (PRG compliance)
+│   ├── CHANGELOG.md  # Version history
+│   └── CONTRIBUTING.md # Contribution guidelines
+├── docs/             # Documentation & assets
+│   ├── ADR/          # Architecture Decision Records
+│   └── images/       # Screenshots and branding
+├── src/
+│   ├── components/   # React UI components (Dashboard, Binder, etc.)
+│   ├── election/     # Electron main process code
+│   ├── lib/          # Utilities (FFmpeg wrappers, audio analysis)
+│   └── types.ts      # TypeScript definitions
+├── AGENTS.md         # MCAF AI coding guidelines
+├── package.json      # Project dependencies
+└── README.md         # This file
 ```
 
-### Running Locally
+## What's Next?
 
-```bash
-# Development server
-npm run dev
+- [ ] **Metadata Fetching**: Integration with OpenLibrary/Audible APIs for auto-tagging.
+- [ ] **Spectrogram Analysis**: Visual quality check for audio files.
+- [ ] **Cloud Sync**: Optional backup for user settings and presets.
 
-# Build for production
-npm run build
-```
+## Contributing
 
-App will launch in Electron automatically.
+Contributions are welcome! Please read the [Contributing Guidelines](.github/CONTRIBUTING.md) for details on our code of conduct and the submission process. We follow **MCAF** principles, so please check `AGENTS.md` before starting major work.
 
----
+## Resources
 
-## 📖 Documentation
+- [Electron](https://www.electronjs.org/) - Framework for building cross-platform desktop apps.
+- [React](https://reactjs.org/) - Library for building user interfaces.
+- [FFmpeg](https://ffmpeg.org/) - A complete, cross-platform solution to record, convert and stream audio and video.
+- [Fluent-FFmpeg](https://github.com/fluent-ffmpeg/node-fluent-ffmpeg) - A fluent API for FFMPEG.
+- [Shadcn UI](https://ui.shadcn.com/) - Reusable components built with Radix UI and Tailwind CSS.
 
-- [Feature Documentation](docs/Features/) - Detailed feature specs
-- [Architecture Decisions](docs/ADR/) - ADRs for technical choices
-- [Testing Strategy](docs/Testing/strategy.md) - How we test
-- [AGENTS.md](AGENTS.md) - AI coding guidelines (MCAF framework)
-
----
-
-## 📖 Philosophy: Open Core
-
-**Audiobook Toolkit** follows an **Open Core** philosophy:
-
-- **Source Code is Free**: The full source code is available here under **GPL-3.0 with Commons Clause**. You are free to clone, modify, and build the application yourself.
-- **Convenience is Paid**: To support development, we offer prebuilt installers and portable executables for a small fee on Gumroad.
-
-**Every feature is available in the source code.** There are no features locked behind a paywall.
-
----
-
-## ⚠️ Note on Windows SmartScreen
-
-> [!WARNING]
-> **"Windows protected your PC"**
->
-> Because I am a student developer, I cannot currently afford code signing certificates (**~$400/year**).
->
-> When you first run the installer, you may see a "Windows protected your PC" popup. This does **not** mean the file is malicious.
->
-> **To install:** Click **"More info"** → **"Run anyway"**.
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! To get started:
-
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Follow [MCAF](AGENTS.md) guidelines (docs before code, tests with implementation)
-4. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-5. Push to the branch (`git push origin feature/AmazingFeature`)
-6. Open a Pull Request
-
-See [AGENTS.md](AGENTS.md) for detailed development workflow.
-
----
-
-## 💖 Support Development
-
-If you enjoy using Audiobook Toolkit and want to support its continued development:
-
-- [Buy a prebuilt binary on Gumroad](https://zendevve.gumroad.com/l/audiobook-toolkit)
-- [Sponsor me on GitHub](https://github.com/sponsors/Zendevve)
-
-Your support helps cover development costs and keeps this project actively maintained!
-
----
-
-## 📄 License
+## License
 
 This project is licensed under the **GNU General Public License v3.0** with the **Commons Clause** addendum.
 
-**You may:**
-- ✅ Use the software for free
-- ✅ Modify the source code
-- ✅ Share your modifications (under the same license)
+- **Source Code**: Free to view, modify, and use for personal purposes.
+- **Commercial Use**: Restricted. You may not sell this software.
 
-**You may NOT:**
-- ❌ Sell this software
-- ❌ Sell a service that consists substantially of this software
+See [LICENSE](LICENSE) for full details.
 
-See the [LICENSE](LICENSE) file for full details.
+## Footer
 
----
+**Author**: [Zendevve](https://github.com/Zendevve)
+**Support**: [Buy Me a Coffee / Gumroad](https://zendevve.gumroad.com/l/audiobook-toolkit)
 
-## 🙌 Acknowledgments
-
-- Built with [MCAF](https://mcaf.managed-code.com/) - Managed Code AI Framework
-- Powered by [FFmpeg](https://ffmpeg.org/) for audio processing
-- UI components from [Shadcn/UI](https://ui.shadcn.com/)
-- Thanks to all contributors!
-
----
-
-## 📞 Contact
-
-👨‍💻 **Developer**: Zendevve
-💼 **GitHub**: [@Zendevve](https://github.com/Zendevve)
-💖 **Sponsor**: [GitHub Sponsors](https://github.com/sponsors/Zendevve)
-🛒 **Product**: [Gumroad](https://zendevve.gumroad.com/l/audiobook-toolkit)
-
----
+---------------
 
 <div align="center">
-  <sub>Made with ❤️ following <a href="https://mcaf.managed-code.com/">MCAF</a> principles</sub>
+    <a href="https://github.com/Zendevve/audiobook-toolkit" target="_blank">
+        <img src="docs/images/logo.png" width="100" height="100" alt="Audiobook Toolkit Footer Icon"/>
+    </a>
 </div>

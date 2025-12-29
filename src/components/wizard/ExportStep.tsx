@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Disc, ArrowLeft, FileAudio, Clock, AlertTriangle } from 'lucide-react';
+import { Disc, ArrowLeft, FileAudio, Clock, AlertTriangle, Apple } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -17,9 +17,11 @@ interface ExportStepProps {
   metadata: BookMetadata;
   outputFormat: OutputFormat;
   bitrate: Bitrate;
+  itunesCompatibility: boolean;
   processing: boolean;
   onFormatChange: (format: OutputFormat) => void;
   onBitrateChange: (bitrate: Bitrate) => void;
+  onItunesCompatibilityChange: (enabled: boolean) => void;
   onExport: () => void;
   onBack: () => void;
   currentStep: number;
@@ -30,9 +32,11 @@ export function ExportStep({
   metadata,
   outputFormat,
   bitrate,
+  itunesCompatibility,
   processing,
   onFormatChange,
   onBitrateChange,
+  onItunesCompatibilityChange,
   onExport,
   onBack,
   currentStep,
@@ -230,6 +234,37 @@ export function ExportStep({
                   </Select>
                 </div>
               </div>
+
+              {/* iTunes Compatibility Toggle */}
+              {outputFormat === 'm4b' && (
+                <div
+                  className={cn(
+                    "flex items-start gap-3 p-3 rounded-lg border transition-colors cursor-pointer",
+                    itunesCompatibility
+                      ? "bg-[#5E6AD2]/10 border-[#5E6AD2]/30"
+                      : "bg-white/[0.02] border-white/10 hover:border-white/20"
+                  )}
+                  onClick={() => onItunesCompatibilityChange(!itunesCompatibility)}
+                >
+                  <div className={cn(
+                    "mt-0.5 w-5 h-5 rounded border flex items-center justify-center transition-colors",
+                    itunesCompatibility
+                      ? "bg-[#5E6AD2] border-[#5E6AD2]"
+                      : "border-[#8A8F98]"
+                  )}>
+                    {itunesCompatibility && <Disc className="w-3 h-3 text-white" />}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Apple className="w-4 h-4 text-[#EDEDEF]" />
+                      <span className="text-sm font-medium text-[#EDEDEF]">iTunes Compatibility Mode</span>
+                    </div>
+                    <p className="text-xs text-[#8A8F98] leading-relaxed">
+                      Optimizes file for Apple devices (iPod, older iTunes) by moving metadata to the start. Recommended for very long books.
+                    </p>
+                  </div>
+                </div>
+              )}
 
 
 

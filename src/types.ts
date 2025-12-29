@@ -13,10 +13,11 @@ export interface AudioFile {
 }
 
 export interface Chapter {
-  id: string;
+  id: number;
   title: string;
   start: number; // in seconds
   end: number; // in seconds
+  duration: number; // in seconds
 }
 
 export interface ProcessingOptions {
@@ -103,6 +104,7 @@ declare global {
             narrator?: string;
           };
           defaultOutputDirectory?: string;
+          itunesCompatibility?: boolean;
         }) => Promise<{ success: boolean; outputPath?: string; cancelled?: boolean }>;
         convert: (options: {
           inputPath: string;
@@ -112,7 +114,22 @@ declare global {
         detectArtwork: (filePaths: string[]) => Promise<{ found: boolean; source?: string; data?: string }>;
         onProgress: (callback: (progress: { percent: number; timemark: string }) => void) => void;
         onConvertProgress: (callback: (data: { inputPath: string; percent: number }) => void) => void;
+
         removeProgressListener: () => void;
+        readChapters: (filePath: string) => Promise<{
+          chapters: Chapter[];
+          duration: number;
+          format: string;
+          bitrate: string;
+        }>;
+        splitByChapters: (options: {
+          inputPath: string;
+          outputDirectory: string;
+          chapters: Chapter[];
+          outputFormat: string;
+          fileNameTemplate: string;
+        }) => Promise<{ success: boolean; results?: any[]; error?: string }>;
+        onSplitProgress: (callback: (data: { message: string, current: number, total: number, chapter: string }) => void) => void;
       };
       settings: {
         read: () => Promise<UserSettings>;

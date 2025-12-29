@@ -7,6 +7,7 @@ import { ArrangeStep } from '@/components/wizard/ArrangeStep';
 import { MetadataStep } from '@/components/wizard/MetadataStep';
 import { ExportStep } from '@/components/wizard/ExportStep';
 import { Converter } from '@/components/Converter';
+import { ChapterSplitter } from '@/components/ChapterSplitter';
 import { defaultMetadata } from '@/components/MetadataPanel';
 import { AudioAnalyzer } from '@/lib/audio-analyzer';
 import { useUndoRedo } from '@/hooks/useUndoRedo';
@@ -18,7 +19,7 @@ type Bitrate = '64k' | '96k' | '128k' | '192k';
 
 export default function Dashboard() {
   // Tool mode
-  const [toolMode, setToolMode] = useState<'binder' | 'converter'>('binder');
+  const [toolMode, setToolMode] = useState<'binder' | 'converter' | 'splitter'>('binder');
 
   // Step state (for Binder)
   const [currentStep, setCurrentStep] = useState(1);
@@ -36,6 +37,7 @@ export default function Dashboard() {
   const [metadata, setMetadata] = useState<BookMetadata>(defaultMetadata);
   const [outputFormat, setOutputFormat] = useState<OutputFormat>('mp3');
   const [bitrate, setBitrate] = useState<Bitrate>('64k');
+  const [itunesCompatibility, setItunesCompatibility] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState({ percent: 0, timemark: '' });
   const [showSettings, setShowSettings] = useState(false);
@@ -187,6 +189,7 @@ export default function Dashboard() {
         outputFormat,
         bitrate,
         defaultOutputDirectory: userSettings.defaultOutputDirectory,
+        itunesCompatibility,
       });
 
       if (result.success) {
@@ -332,7 +335,7 @@ export default function Dashboard() {
             : 'text-[#8A8F98] hover:text-[#EDEDEF]'
             }`}
         >
-          Audiobook Toolkit
+          Audiobook Binder
           {toolMode === 'binder' && (
             <motion.div
               layoutId="activeTab"
@@ -350,6 +353,22 @@ export default function Dashboard() {
         >
           Format Converter
           {toolMode === 'converter' && (
+            <motion.div
+              layoutId="activeTab"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5E6AD2]"
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            />
+          )}
+        </button>
+        <button
+          onClick={() => setToolMode('splitter')}
+          className={`px-6 py-3 font-medium transition-all relative ${toolMode === 'splitter'
+            ? 'text-[#5E6AD2]'
+            : 'text-[#8A8F98] hover:text-[#EDEDEF]'
+            }`}
+        >
+          Chapter Splitter
+          {toolMode === 'splitter' && (
             <motion.div
               layoutId="activeTab"
               className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5E6AD2]"
@@ -401,9 +420,11 @@ export default function Dashboard() {
             metadata={metadata}
             outputFormat={outputFormat}
             bitrate={bitrate}
+            itunesCompatibility={itunesCompatibility}
             processing={processing}
             onFormatChange={setOutputFormat}
             onBitrateChange={setBitrate}
+            onItunesCompatibilityChange={setItunesCompatibility}
             onExport={handleProcess}
             onBack={prevStep}
             currentStep={currentStep}
@@ -411,6 +432,9 @@ export default function Dashboard() {
         )}
         {toolMode === 'converter' && (
           <Converter key="converter" />
+        )}
+        {toolMode === 'splitter' && (
+          <ChapterSplitter key="splitter" />
         )}
       </AnimatePresence>
 

@@ -22,7 +22,13 @@ contextBridge.exposeInMainWorld("electron", {
     },
     // Format conversion
     convert: (request) => ipcRenderer.invoke("audio:convert", request),
-    batchConvert: (requests) => ipcRenderer.invoke("audio:batchConvert", requests)
+    batchConvert: (requests) => ipcRenderer.invoke("audio:batchConvert", requests),
+    // Chapter Splitter
+    readChapters: (filePath) => ipcRenderer.invoke("audio:read-chapters", filePath),
+    splitByChapters: (options) => ipcRenderer.invoke("audio:split-by-chapters", options),
+    onSplitProgress: (callback) => {
+      ipcRenderer.on("audio:split-progress", (_, data) => callback(data));
+    }
   },
   // For direct IPC access (required for image upload events)
   ipcRenderer: {

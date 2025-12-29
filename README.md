@@ -28,6 +28,8 @@ Merge, convert, and enhance audiobooks - all in one beautiful desktop app.
 🔓 **100% Open Source** - Every feature available in the source code (Open Core model)
 
 ![Format Converter Demo](docs/images/converter-demo.png)
+![Files Ready View](docs/images/files-ready-view.png)
+
 
 ---
 

@@ -13,6 +13,9 @@ The Dashboard is the main entry point where users add, reorder, and manage audio
     - User can **remove** items.
 4.  **Action Bar**: "Process" button becomes active when files are present.
 
+    ![Files Ready View](../images/files-ready-view.png)
+
+
 ## UI/UX Rules
 - **Aesthetic**: Dark mode, glassmorphism effects, smooth animations (Framer Motion).
 - **Feedback**: Visual cues when dragging over the drop zone.

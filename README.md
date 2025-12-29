@@ -15,11 +15,13 @@
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
+[Download Prebuilt Binary](https://zendevve.gumroad.com/l/audiobook-toolkit) · [Report Bug](https://github.com/Zendevve/audiobook-toolkit/issues) · [Support Development](https://github.com/sponsors/Zendevve)
+
 </div>
 
 ---------------
 
-A comprehensive, open-source desktop application for managing and upgrading your audiobook collection. Merge scattered MP3s into chapterized M4Bs, split excessively large files, converts formats, and fix compatibility issues for legacy devices—all in a beautiful, dark-mode interface.
+A comprehensive, open-source desktop application for managing and upgrading your audiobook collection. Merge scattered MP3s into chapterized M4Bs, split excessively large files, convert formats, and fix compatibility issues for legacy devices—all in a beautiful, dark-mode interface.
 
 ![Files Ready View](docs/images/files-ready-view.png)
 
@@ -27,13 +29,12 @@ A comprehensive, open-source desktop application for managing and upgrading your
 
 - [Features](#features)
 - [Background Story](#background-story)
+- [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
-    - [Prerequisites](#prerequisites)
-    - [Installation](#installation)
+- [Documentation](#documentation)
+- [Philosophy: Open Core](#philosophy-open-core)
 - [What's Inside?](#whats-inside)
-- [What's Next?](#whats-next)
 - [Contributing](#contributing)
-- [Resources](#resources)
 - [License](#license)
 - [Footer](#footer)
 
@@ -43,8 +44,10 @@ A comprehensive, open-source desktop application for managing and upgrading your
 - **✂️ Chapter Splitter**: Losslessly split large audiobook files back into individual chapters based on metadata.
 - **🔄 Format Converter**: Batch convert audio files between common formats (M4B, MP3, FLAC, AAC) with high quality.
 - **🍎 iTunes Compatibility**: "Smart Fix" mode to ensure bookmarked playback works on older iPods and Apple Books.
-- **📝 Metadata Editor**: Rich editor for Title, Author, Cover Art, and more.
+- **📝 Metadata Editor**: Rich editor for Title, Author, Narrator, Series, Cover Art, and more.
+- **🪄 Smart Features**: Auto-fill metadata from online sources, smart artwork detection.
 - **🕵️ Privacy First**: Runs 100% locally on your machine using FFmpeg/Electron. No cloud uploads, no tracking.
+- **🎨 Modern UI**: Beautiful dark-mode interface with premium aesthetics/glassmorphism.
 
 ## Background Story
 
@@ -52,11 +55,22 @@ I built **Audiobook Toolkit** because I was tired of the messy state of digital 
 
 Existing tools were either command-line only (difficult to use) or expensive closed-source software. I wanted a tool that respects the user: **Open Core**, privacy-respecting, and powerful enough for the power user but simple enough for anyone. Following the **MCAF (Managed Code AI Framework)**, this project aims to set a gold standard for modern desktop tools.
 
+## Tech Stack
+
+| Category | Technologies |
+|----------|-------------|
+| **Frontend** | React, TypeScript, TailwindCSS, Shadcn/UI, Vite, Framer Motion |
+| **Backend** | Electron (Node.js), FFmpeg |
+| **Audio Engine** | `fluent-ffmpeg`, `ffmpeg-static`, `ffprobe-static` |
+| **Testing** | Vitest (Unit/Integration), Playwright (E2E) |
+| **Styling** | TailwindCSS, Radix UI primitives |
+
 ## Getting Started
 
 ### Prerequisites
 
 - **Node.js** ≥ 18.x
+- **FFmpeg** (bundled via `ffmpeg-static` for dev, but good to have)
 - **npm** or **yarn**
 
 ### Installation
@@ -69,11 +83,35 @@ Existing tools were either command-line only (difficult to use) or expensive clo
 2.  Install dependencies:
     ```bash
     npm install
+    # or
+    yarn install
     ```
 3.  Start the development server:
     ```bash
     npm run dev
     ```
+
+> [!WARNING]
+> **Note on Windows SmartScreen**:
+> Because I am an independent developer, I cannot currently afford code signing certificates (~$400/year).
+> When you run the installer, you may see "Windows protected your PC". This does **not** mean the file is malicious.
+> Click **"More info"** → **"Run anyway"**.
+
+## Documentation
+
+- [Feature Documentation](docs/Features/) - Detailed feature specs
+- [Architecture Decisions](docs/ADR/) - ADRs for technical choices
+- [Testing Strategy](docs/Testing/strategy.md) - How we test
+- [AGENTS.md](AGENTS.md) - AI coding guidelines (MCAF framework)
+
+## Philosophy: Open Core
+
+**Audiobook Toolkit** follows an **Open Core** philosophy:
+
+- **Source Code is Free**: The full source code is available here under **GPL-3.0 with Commons Clause**. You are free to clone, modify, and build the application yourself.
+- **Convenience is Paid**: To support development, we offer prebuilt installers and portable executables for a small fee on Gumroad.
+
+**Every feature is available in the source code.** There are no features locked behind a paywall.
 
 ## What's Inside?
 
@@ -82,42 +120,31 @@ Existing tools were either command-line only (difficult to use) or expensive clo
 │   ├── CHANGELOG.md  # Version history
 │   └── CONTRIBUTING.md # Contribution guidelines
 ├── docs/             # Documentation & assets
-│   ├── ADR/          # Architecture Decision Records
-│   └── images/       # Screenshots and branding
+│   ├── FMHY_SUBMISSION.md # Marketing pitch
 ├── src/
 │   ├── components/   # React UI components (Dashboard, Binder, etc.)
-│   ├── election/     # Electron main process code
+│   ├── electron/     # Electron main process code
 │   ├── lib/          # Utilities (FFmpeg wrappers, audio analysis)
 │   └── types.ts      # TypeScript definitions
-├── AGENTS.md         # MCAF AI coding guidelines
-├── package.json      # Project dependencies
 └── README.md         # This file
 ```
-
-## What's Next?
-
-- [ ] **Metadata Fetching**: Integration with OpenLibrary/Audible APIs for auto-tagging.
-- [ ] **Spectrogram Analysis**: Visual quality check for audio files.
-- [ ] **Cloud Sync**: Optional backup for user settings and presets.
 
 ## Contributing
 
 Contributions are welcome! Please read the [Contributing Guidelines](.github/CONTRIBUTING.md) for details on our code of conduct and the submission process. We follow **MCAF** principles, so please check `AGENTS.md` before starting major work.
 
-## Resources
-
-- [Electron](https://www.electronjs.org/) - Framework for building cross-platform desktop apps.
-- [React](https://reactjs.org/) - Library for building user interfaces.
-- [FFmpeg](https://ffmpeg.org/) - A complete, cross-platform solution to record, convert and stream audio and video.
-- [Fluent-FFmpeg](https://github.com/fluent-ffmpeg/node-fluent-ffmpeg) - A fluent API for FFMPEG.
-- [Shadcn UI](https://ui.shadcn.com/) - Reusable components built with Radix UI and Tailwind CSS.
-
 ## License
 
 This project is licensed under the **GNU General Public License v3.0** with the **Commons Clause** addendum.
 
-- **Source Code**: Free to view, modify, and use for personal purposes.
-- **Commercial Use**: Restricted. You may not sell this software.
+**You may:**
+- ✅ Use the software for free
+- ✅ Modify the source code
+- ✅ Share your modifications (under the same license)
+
+**You may NOT:**
+- ❌ Sell this software
+- ❌ Sell a service that consists substantially of this software
 
 See [LICENSE](LICENSE) for full details.
 
@@ -125,6 +152,10 @@ See [LICENSE](LICENSE) for full details.
 
 **Author**: [Zendevve](https://github.com/Zendevve)
 **Support**: [Buy Me a Coffee / Gumroad](https://zendevve.gumroad.com/l/audiobook-toolkit)
+
+### Acknowledgments
+- Built with [MCAF](https://mcaf.managed-code.com/)
+- UI by [Shadcn/UI](https://ui.shadcn.com/)
 
 ---------------
 

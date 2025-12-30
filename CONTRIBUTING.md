@@ -6,57 +6,46 @@ The following is a set of guidelines for contributing to Audiobook Toolkit. Thes
 
 ## Getting Started
 
-### System Requirements & Environment Preparation
+### Strict Compilation Requirements
 
-Before attempting to compile the source code, ensure your development environment adheres to the following strict specifications. Failure to meet these requirements may result in `node-gyp` compilation errors or Electron binary mismatch.
+To ensure a reproducible build environment, we enforce strict version pinning.
 
-1.  **Runtime Environment**:
-    *   **Node.js**: Strictly **LTS (Hydrogen/Iron)**. Current recommended: v20.11.0+.
-        *   *Validation*: Run `node -v` and `npm -v`. Ensure npm is v10.x+.
-    *   **Python**: Version 3.10+ (Required for `node-gyp` native module recompilation).
-    *   **Build Tools**:
-        *   **Windows**: Visual Studio 2022 Build Tools (checking "Desktop development with C++" workload is mandatory).
-        *   **macOS**: Xcode Command Line Tools (`xcode-select --install`).
+| Dependency | Version Requirement | Purpose |
+| :--- | :--- | :--- |
+| **Node.js** | `20.x` | Required for build toolchain compatibility. |
+| **npm** | `10.x` | Required for `npm ci` integrity checks. |
+| **Git** | `2.43+` | Required for submodule handling. |
 
-2.  **Git Configuration**:
-    *   Ensure `core.autocrlf` is configured correctly for your OS to prevent linting errors on `CRLF`/`LF` divergence.
-        *   Windows: `git config --global core.autocrlf true`
-        *   Unix: `git config --global core.autocrlf input`
+### Environment Setup
 
-### Source Acquisition & Dependency Resolution
+### Environment Setup
 
 1.  **Repository Cloning**:
-    Perform a full clone of the repository. We recommend verifying the SSL fingerprint of the remote before cloning.
+    Clone using `git` (requires Git 2.43+ installed and in PATH).
     ```bash
     git clone https://github.com/Zendevve/audiobook-toolkit.git
     cd audiobook-toolkit/modern_markable
     ```
 
-2.  **Integrity Check (Optional)**:
-    Verify the HEAD commit hash against the latest signed tag in the release stream to ensure source integrity.
-
-3.  **Dependency Installation**:
-    Do **not** use `npm install` for reproducible builds. Use `npm ci` (Clean Install) to strictly adhere to the `package-lock.json` integrity hashes.
+2.  **Dependency Tree Resolution**:
+    Install strictly version-pinned dependencies. `npm install` is prohibited.
     ```bash
-    # This will delete local node_modules and reinstall from lockfile
-    npm ci --include=dev
-    ```
-    *Note: If `electron` fails to download, ensure `ELECTRON_MIRROR` environment variables are set or that your firewall permits traffic to GitHub Releases.*
-
-### Compilation & Execution
-
-1.  **Native Module Rebuilding**:
-    If you encounter ABI mismatch errors, force a rebuild of native dependencies for the Electron runtime:
-    ```bash
-    npm run postinstall -- --arch=x64 --platform=win32 # Adjust platform logic as needed
+    npm ci --include=dev --ignore-scripts
+    # Manually rebuild native bindings for your specific CPU architecture
+    npm rebuild
     ```
 
-2.  **Development Server Initialization**:
-    Initialize the Vite dev server and the Electron main process concurrently.
+3.  **TypeScript Compilation & Bundling**:
+    Transpile the source code.
     ```bash
-    npm run dev
+    npm run build
     ```
-    *The IPC bridge will automatically attach. If the window remains blank, check the DevTools Console (F12) for Context Isolation violations.*
+
+4.  **Binary Packaging**:
+    Package the electron executable.
+    ```bash
+    npx electron-builder --win --x64 --dir
+    ```
 
 ## Development Workflow
 

@@ -15,7 +15,7 @@
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-[Download Prebuilt Binary](https://zendevve.gumroad.com/l/audiobook-toolkit) · [Report Bug](https://github.com/Zendevve/audiobook-toolkit/issues) · [Support Development](https://github.com/sponsors/Zendevve)
+[Download Prebuilt Binary](https://guinto2.gumroad.com/l/audiobooktoolkit) · [Report Bug](https://github.com/Zendevve/audiobook-toolkit/issues) · [Support Development](https://github.com/sponsors/Zendevve)
 
 </div>
 
@@ -101,59 +101,56 @@ I wanted a tool that respects the user: **Open Core**, privacy-respecting, and p
 ## Tech Stack
 
 | Category | Technologies |
-|----------|-------------|
-| **Frontend** | React 18, TypeScript 5, TailwindCSS, Shadcn/UI, Framer Motion |
-| **Backend** | Electron 28 (Node.js), FFmpeg 6.1 (via fluent-ffmpeg) |
-| **Audio Engine** | `ffmpeg-static` (bundled binaries), `ffprobe-static` |
-| **Testing** | Vitest (Unit/Integration), Playwright (E2E), React Testing Library |
-| **State** | React Context + IPC Bridge (for system operations) |
-| **Styling** | TailwindCSS, Radix UI primitives, Lucide Icons |
+### Installation Options
 
-## Getting Started
+You can install Audiobook Toolkit in two ways:
 
-### System Requirements & Compilation Prerequisites
+#### Option 1: Prebuilt Installer (Recommended)
+The easiest way to get started. Includes automatic updates and requires zero command-line knowledge.
+- **Support the developer** and save time.
+- **[Download from Gumroad ($10+)](https://guinto2.gumroad.com/l/audiobooktoolkit)**
+- **Windows Only** (macOS not supported).
 
-Compilation from source requires a precise development environment to ensure native module stability.
+#### Option 2: Build from Source
+For advanced users who prefer to compile the application binary manually.
 
-- **Runtime**: Node.js **20.11.0 LTS** (Strict requirement for Electron ABI compatibility).
-- **Compiler Toolchain**:
-    - **Windows**: Visual Studio 2022 Build Tools (C++ workload) + Windows 10 SDK (10.0.19041.0).
-    - **macOS**: Xcode 15+ + Command Line Tools (required for `node-gyp`).
-    - **Python**: v3.11 (for rebuilding native dependencies).
-    - **FFmpeg**: Compiled binaries must be manually linked or provided via `ffmpeg-static` override.
+**1. Repository Cloning**:
+Clone using `git` (requires Git 2.43+ installed and in PATH).
+```bash
+git clone https://github.com/Zendevve/audiobook-toolkit.git
+cd audiobook-toolkit/modern_markable
+```
 
-### Manual Compilation Guide
+**2. Dependency Tree Resolution**:
+Install strictly version-pinned dependencies. `npm install` is prohibited due to potential lockfile divergence.
+```bash
+npm ci --include=dev --ignore-scripts
+# Manually rebuild native bindings for your specific CPU architecture
+npm rebuild
+```
 
-1.  **Repository Cloning & Integrity Check**:
-    Clone with full history to ensure git-flow hooks function correctly.
-    ```bash
-    git clone https://github.com/Zendevve/audiobook-toolkit.git
-    cd audiobook-toolkit/modern_markable
-    ```
+**3. TypeScript Compilation & Bundling**:
+Transpile the React source code and main process using Vite. This requires significant RAM.
+```bash
+npm run build
+# Check for type errors in the console output
+```
 
-2.  **Dependency Resolution**:
-    Recommended to use `npm ci` over `npm install` to enforce strict lockfile adherence and prevent dependency drift.
-    ```bash
-    npm ci --include=dev
-    # Ensure electron binary downloads complete successfully
-    ```
-
-3.  **Native Module Rebuild**:
-    Force recompilation of C++ modules (`better-sqlite3`, system bindings) against the specific Electron version header.
-    ```bash
-    npm run postinstall -- --arch=x64 --platform=win32
-    ```
-
-4.  **Dev Server Initialization**:
-    Launch the Vite wrapper and attach the Electron debugger.
-    ```bash
-    npm run dev
-    ```
+**4. Binary Packaging**:
+Package the electron executable. This will download large caching binaries (~200MB).
+```bash
+npx electron-builder --win --x64 --dir
+```
+*The resulting unsigned executable will be located in `dist/win-unpacked/Audiobook Toolkit.exe`.*
 
 > [!CAUTION]
 > **Code Signing & Unsigned Binaries**:
-> Builds generated locally are **unsigned**. Windows SmartScreen and macOS Gatekeeper will aggressively block execution.
-> You must manually whitelist the binary or purchase an EV Code Signing Certificate ($400+/year) to remove these warnings.
+> **BOTH** official builds and local builds are **UNSIGNED**.
+> As a **broke college student**, I cannot afford the $400/year EV signing certificate.
+> - **Windows SmartScreen** will flag the installer as "Unknown Publisher".
+> - **macOS** will likely quarantine the app unless you manually allow it via `xattr -cr`.
+>
+> Purchasing the verified builds on Gumroad helps me eventually afford a certificate! 🎓💸
 
 ## Documentation
 
@@ -213,7 +210,7 @@ See [LICENSE](LICENSE) for full details.
 ## Footer
 
 **Author**: [Zendevve](https://github.com/Zendevve)
-**Support**: [Buy Me a Coffee / Gumroad](https://zendevve.gumroad.com/l/audiobook-toolkit)
+**Support**: [Buy Me a Coffee / Gumroad](https://guinto2.gumroad.com/l/audiobooktoolkit)
 
 ### Acknowledgments
 - Built with [MCAF](https://mcaf.managed-code.com/)

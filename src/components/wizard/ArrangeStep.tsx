@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GripVertical, FileMusic, X, Clock, ArrowRight, ArrowLeft, Download, Loader2 } from 'lucide-react';
+import { GripVertical, FileMusic, X, Clock, ArrowRight, ArrowLeft, Download, Loader2, AudioWaveform } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
@@ -170,6 +170,7 @@ export function ArrangeStep({ files, onFilesChange, onRemoveFile, onUpdateMetada
   const [importLoading, setImportLoading] = useState(false);
   const [showAsinInput, setShowAsinInput] = useState(false);
   const [customAsin, setCustomAsin] = useState(asin || '');
+  const [detectingLoading, setDetectingLoading] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -244,6 +245,78 @@ export function ArrangeStep({ files, onFilesChange, onRemoveFile, onUpdateMetada
       });
     } finally {
       setImportLoading(false);
+    }
+  };
+
+  // Detect chapters from silence in audio files
+  const handleDetectSilence = async () => {
+    if (files.length === 0) {
+      toast.error('No files to analyze');
+      return;
+    }
+
+    // Get the first file path to analyze
+    const firstFile = files[0];
+    const filePath = (firstFile.file as any).path;
+
+    if (!filePath) {
+      toast.error('Cannot analyze file', {
+        description: 'File path not available. Try re-adding the files.',
+      });
+      return;
+    }
+
+    setDetectingLoading(true);
+
+    try {
+      const result = await window.electron.audio.detectSilence({
+        filePath,
+        noiseThreshold: -50,
+        minDuration: 1.5,
+      });
+
+      if (!result.success) {
+        toast.error('Detection failed', {
+          description: result.error || 'Could not analyze audio file.',
+        });
+        return;
+      }
+
+      if (result.suggestedChapters.length === 0) {
+        toast.info('No chapters detected', {
+          description: 'Try lowering the sensitivity threshold.',
+        });
+        return;
+      }
+
+      // Apply chapter names based on detected segments
+      const updatedFiles = files.map((file, index) => {
+        const chapter = result.suggestedChapters[index];
+        if (chapter) {
+          const duration = formatDuration(chapter.duration);
+          return {
+            ...file,
+            metadata: {
+              ...file.metadata,
+              title: `Chapter ${index + 1} (${duration})`,
+            },
+          };
+        }
+        return file;
+      });
+
+      onFilesChange(updatedFiles);
+
+      toast.success(`Detected ${result.suggestedChapters.length} chapters`, {
+        description: `Found ${result.silences.length} silence gaps in audio.`,
+      });
+    } catch (error) {
+      console.error('Silence detection failed:', error);
+      toast.error('Detection failed', {
+        description: 'Could not analyze audio file.',
+      });
+    } finally {
+      setDetectingLoading(false);
     }
   };
 
@@ -325,6 +398,22 @@ export function ArrangeStep({ files, onFilesChange, onRemoveFile, onUpdateMetada
               Import Chapter Names
             </Button>
           )}
+
+          {/* Detect Silence Button */}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleDetectSilence}
+            disabled={detectingLoading || files.length === 0}
+            className="h-8 text-[#8A8F98] hover:text-[#EDEDEF] hover:bg-white/[0.05]"
+          >
+            {detectingLoading ? (
+              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+            ) : (
+              <AudioWaveform className="w-3.5 h-3.5 mr-1.5" />
+            )}
+            Detect Chapters
+          </Button>
         </div>
       </div>
 

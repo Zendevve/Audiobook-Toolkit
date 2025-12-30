@@ -832,3 +832,169 @@ ipcMain.handle('audio:split-by-chapters', async (_event, request: SplitRequest) 
 
   return { success: true, results };
 });
+
+// ========================================
+// Silence Detection for Auto-Chaptering
+// ========================================
+
+interface SilenceDetectOptions {
+  filePath: string;
+  noiseThreshold?: number; // dB threshold (default: -50dB)
+  minDuration?: number;    // Minimum silence duration in seconds (default: 1.5s)
+}
+
+interface SilenceGap {
+  start: number;   // Silence start in seconds
+  end: number;     // Silence end in seconds
+  duration: number;
+}
+
+interface SilenceDetectResult {
+  success: boolean;
+  silences: SilenceGap[];
+  suggestedChapters: { start: number; end: number; duration: number }[];
+  totalDuration: number;
+  error?: string;
+}
+
+ipcMain.handle('audio:detect-silence', async (_event, options: SilenceDetectOptions): Promise<SilenceDetectResult> => {
+  const { filePath, noiseThreshold = -50, minDuration = 1.5 } = options;
+
+  console.log(`[SILENCE] Detecting silence in: ${filePath}`);
+  console.log(`[SILENCE] Params: noise=${noiseThreshold}dB, minDuration=${minDuration}s`);
+
+  if (!fs.existsSync(filePath)) {
+    return { success: false, silences: [], suggestedChapters: [], totalDuration: 0, error: 'File not found' };
+  }
+
+  // First get total duration using ffprobe
+  const getDuration = (): Promise<number> => {
+    return new Promise((resolve) => {
+      ffmpeg.ffprobe(filePath, (err, metadata) => {
+        if (err) {
+          resolve(0);
+        } else {
+          resolve(metadata.format?.duration || 0);
+        }
+      });
+    });
+  };
+
+  const totalDuration = await getDuration();
+
+  return new Promise((resolve) => {
+    const silences: SilenceGap[] = [];
+    let stderrOutput = '';
+
+    // Use silencedetect filter
+    // Output format: [silencedetect @ 0x...] silence_start: 10.5
+    //                [silencedetect @ 0x...] silence_end: 12.3 | silence_duration: 1.8
+    ffmpeg(filePath)
+      .audioFilters(`silencedetect=noise=${noiseThreshold}dB:d=${minDuration}`)
+      .format('null')
+      .output('-') // Output to null (we only care about stderr)
+      .on('start', (cmd) => {
+        console.log('[SILENCE] FFmpeg command:', cmd);
+      })
+      .on('stderr', (line) => {
+        stderrOutput += line + '\n';
+
+        // Parse silence_start
+        const startMatch = line.match(/silence_start:\s*([\d.]+)/);
+        if (startMatch) {
+          silences.push({
+            start: parseFloat(startMatch[1]),
+            end: 0,
+            duration: 0
+          });
+        }
+
+        // Parse silence_end and duration
+        const endMatch = line.match(/silence_end:\s*([\d.]+)\s*\|\s*silence_duration:\s*([\d.]+)/);
+        if (endMatch && silences.length > 0) {
+          const lastSilence = silences[silences.length - 1];
+          lastSilence.end = parseFloat(endMatch[1]);
+          lastSilence.duration = parseFloat(endMatch[2]);
+        }
+      })
+      .on('progress', (progress) => {
+        // Send progress to UI
+        if (mainWindow && progress.percent) {
+          mainWindow.webContents.send('audio:silence-progress', {
+            percent: progress.percent,
+            timemark: progress.timemark
+          });
+        }
+      })
+      .on('end', () => {
+        console.log(`[SILENCE] Detected ${silences.length} silence gaps`);
+
+        // Generate suggested chapters based on silence gaps
+        // Chapters are the segments BETWEEN silences
+        const suggestedChapters: { start: number; end: number; duration: number }[] = [];
+
+        if (silences.length === 0) {
+          // No silence detected - entire file is one chapter
+          suggestedChapters.push({
+            start: 0,
+            end: totalDuration,
+            duration: totalDuration
+          });
+        } else {
+          // First chapter: from start to first silence
+          if (silences[0].start > 0.5) {
+            suggestedChapters.push({
+              start: 0,
+              end: silences[0].start,
+              duration: silences[0].start
+            });
+          }
+
+          // Middle chapters: between silence gaps
+          for (let i = 0; i < silences.length - 1; i++) {
+            const chapterStart = silences[i].end;
+            const chapterEnd = silences[i + 1].start;
+            const chapterDuration = chapterEnd - chapterStart;
+
+            // Only add if chapter is at least 30 seconds
+            if (chapterDuration >= 30) {
+              suggestedChapters.push({
+                start: chapterStart,
+                end: chapterEnd,
+                duration: chapterDuration
+              });
+            }
+          }
+
+          // Last chapter: from last silence to end
+          const lastSilence = silences[silences.length - 1];
+          if (totalDuration - lastSilence.end > 0.5) {
+            suggestedChapters.push({
+              start: lastSilence.end,
+              end: totalDuration,
+              duration: totalDuration - lastSilence.end
+            });
+          }
+        }
+
+        console.log(`[SILENCE] Suggested ${suggestedChapters.length} chapters`);
+        resolve({
+          success: true,
+          silences,
+          suggestedChapters,
+          totalDuration
+        });
+      })
+      .on('error', (err) => {
+        console.error('[SILENCE] Error:', err.message);
+        resolve({
+          success: false,
+          silences: [],
+          suggestedChapters: [],
+          totalDuration,
+          error: err.message
+        });
+      })
+      .run();
+  });
+});

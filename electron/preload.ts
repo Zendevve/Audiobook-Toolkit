@@ -44,6 +44,15 @@ contextBridge.exposeInMainWorld('electron', {
     onSplitProgress: (callback: (data: any) => void) => {
       ipcRenderer.on('audio:split-progress', (_, data) => callback(data));
     },
+    // Silence Detection
+    detectSilence: (options: { filePath: string; noiseThreshold?: number; minDuration?: number }) =>
+      ipcRenderer.invoke('audio:detect-silence', options),
+    onSilenceProgress: (callback: (data: { percent: number; timemark: string }) => void) => {
+      ipcRenderer.on('audio:silence-progress', (_, data) => callback(data));
+    },
+    removeSilenceProgressListener: () => {
+      ipcRenderer.removeAllListeners('audio:silence-progress');
+    },
   },
   // For direct IPC access (required for image upload events)
   ipcRenderer: {

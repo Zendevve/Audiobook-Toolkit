@@ -1,5 +1,5 @@
-import { contextBridge as t, ipcRenderer as o, webUtils as n } from "electron";
-t.exposeInMainWorld("electron", {
+import { contextBridge as s, ipcRenderer as o, webUtils as n } from "electron";
+s.exposeInMainWorld("electron", {
   openFiles: () => o.invoke("dialog:open-files"),
   // Window controls
   minimize: () => o.send("window:minimize"),
@@ -27,6 +27,14 @@ t.exposeInMainWorld("electron", {
     splitByChapters: (e) => o.invoke("audio:split-by-chapters", e),
     onSplitProgress: (e) => {
       o.on("audio:split-progress", (r, i) => e(i));
+    },
+    // Silence Detection
+    detectSilence: (e) => o.invoke("audio:detect-silence", e),
+    onSilenceProgress: (e) => {
+      o.on("audio:silence-progress", (r, i) => e(i));
+    },
+    removeSilenceProgressListener: () => {
+      o.removeAllListeners("audio:silence-progress");
     }
   },
   // For direct IPC access (required for image upload events)

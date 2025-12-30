@@ -130,6 +130,19 @@ declare global {
           fileNameTemplate: string;
         }) => Promise<{ success: boolean; results?: any[]; error?: string }>;
         onSplitProgress: (callback: (data: { message: string, current: number, total: number, chapter: string }) => void) => void;
+        detectSilence: (options: {
+          filePath: string;
+          noiseThreshold?: number;
+          minDuration?: number;
+        }) => Promise<{
+          success: boolean;
+          silences: { start: number; end: number; duration: number }[];
+          suggestedChapters: { start: number; end: number; duration: number }[];
+          totalDuration: number;
+          error?: string;
+        }>;
+        onSilenceProgress: (callback: (data: { percent: number; timemark: string }) => void) => void;
+        removeSilenceProgressListener: () => void;
       };
       settings: {
         read: () => Promise<UserSettings>;
